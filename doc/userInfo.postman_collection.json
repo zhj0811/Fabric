@@ -1,0 +1,80 @@
+{
+	"info": {
+		"_postman_id": "03360e7b-7cd5-4781-873d-a5a5a659c2c0",
+		"name": "userInfo",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "saveuserinfo",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "da729ed4-72c5-48af-a7df-8400a112c97f",
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n\t\"Key\":\"trade0001\",\r\n\t\"BusinessType\":\"Import001\",\r\n\t\"DataType\":\"UserInfo\",\r\n\t\"WriteRoleType\":\"RoleType0001\",\r\n\t\"Writer\":\"USER0001\",\r\n\t\"Version\":\"1.0\",\r\n\t\"UserName\":\"国务院\",\r\n\t\"UserID\":\"1111111\",\r\n\t\"UserType\":\"ter\",\r\n\t\"UserArea\":\"nanj\"\r\n}\r\n"
+				},
+				"url": {
+					"raw": "192.168.0.146:5984/operator/saveuserinfo",
+					"host": [
+						"192",
+						"168",
+						"0",
+						"146"
+					],
+					"port": "5984",
+					"path": [
+						"operator",
+						"saveuserinfo"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "queryUserinfo",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n\t\"Key\":\"trade0001\",\r\n\t\"BusinessType\":\"Import001\",\r\n\t\"DataType\":\"UserInfo\",\r\n\t\"WriteRoleType\":\"RoleType0001\",\r\n\t\"Reader\":\"USER0001\"\r\n}"
+				},
+				"url": {
+					"raw": "192.168.0.146:5984/operator/queryuserinfo",
+					"host": [
+						"192",
+						"168",
+						"0",
+						"146"
+					],
+					"port": "5984",
+					"path": [
+						"operator",
+						"queryuserinfo"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

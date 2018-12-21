@@ -1,0 +1,19 @@
+version: '2'
+
+services:
+  eventserver:
+    container_name: eventserver
+    image: factoring/eventserver
+    restart: always
+    volumes:
+    - ./client_sdk.yaml_twc:/opt/eventserver/client_sdk.yaml
+    - ./crypto:/opt/eventserver/crypto
+    - ./current.info:/opt/eventserver/current.info
+    - ../../../../tools/crypto-config:/opt/eventserver/crypto-config
+    logging:
+      driver: "json-file"
+      options: 
+        max-size: "50m"
+        max-file: "10" 
+    working_dir: /opt/eventserver
+    command: ./eventserver

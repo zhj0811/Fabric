@@ -1,0 +1,68 @@
+{
+	"info": {
+		"_postman_id": "bf0432a4-f6ac-4209-9bcb-2521cbd3987b",
+		"name": "data",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "savesavedeclarations",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"Key\":\"trade0001\",\r\n\t\"BusinessType\":\"inport0001\",\r\n\t\"DataType\":\"Declarations\",\r\n    \"writeRoleType\":\"RoleType0002\",\r\n    \"Writer\":\"USER0001\",\r\n    \"Version\":\"version1.0\",\r\n    \"BusinessData\":\"{123,456,789}\"\r\n}"
+				},
+				"url": {
+					"raw": "192.168.0.146:5984/traders/savedeclarations",
+					"host": [
+						"192",
+						"168",
+						"0",
+						"146"
+					],
+					"port": "5984",
+					"path": [
+						"traders",
+						"savedeclarations"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "querydeclarations",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": " {\r\n    \"Key\":\"trade0001\",\r\n\t\"BusinessType\":\"inport0001\",\r\n\t\"DataType\":\"Declarations\",\r\n    \"writeRoleType\":\"RoleType0002\",\r\n    \"Reader\":\"USER0001\"\r\n}"
+				},
+				"url": {
+					"raw": "192.168.0.146:5984/all/querydeclarations",
+					"host": [
+						"192",
+						"168",
+						"0",
+						"146"
+					],
+					"port": "5984",
+					"path": [
+						"all",
+						"querydeclarations"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

@@ -1,0 +1,14 @@
+# Copyright PeerFintech All Rights Reserved
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+FROM centos:centos7.1.1503
+ENV APISERVER_PATH /opt/apiserver/
+RUN mkdir $APISERVER_PATH
+COPY payload/apiserver $APISERVER_PATH
+COPY payload/*.rpm $APISERVER_PATH
+RUN rpm -ivh $APISERVER_PATH/*.rpm
+RUN rm -f $APISERVER_PATH/*.rpm
+WORKDIR $APISERVER_PATH
+CMD ["./apiserver"]

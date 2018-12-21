@@ -1,0 +1,14 @@
+# Copyright PeerFintech All Rights Reserved
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+FROM centos:centos7.1.1503
+ENV EVENTSERVER_PATH /opt/eventserver/
+RUN mkdir $EVENTSERVER_PATH
+COPY payload/eventserver $EVENTSERVER_PATH
+COPY payload/*.rpm $EVENTSERVER_PATH
+RUN rpm -ivh $EVENTSERVER_PATH/libtool-ltdl-2.4.2-22.el7_3.x86_64.rpm
+RUN rm -f $EVENTSERVER_PATH/*.rpm
+WORKDIR $EVENTSERVER_PATH
+CMD ["./eventserver"]
