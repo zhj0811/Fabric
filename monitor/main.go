@@ -33,6 +33,7 @@ var (
 	configName = flag.String("configName", "client_sdk", "config file name")
 	isVersion  = flag.Bool("v", false, "Show version information")
 	logger     = logging.MustGetLogger(metadata.LogModule)
+	blockNum   = flag.Uint64("blockNum", 4, "get block number")
 )
 
 func main() {
@@ -52,7 +53,7 @@ func main() {
 	logger.Infof("checkTime is %v.", checkTime)
 
 	block := &common.Block{}
-	block, err = gohfc.GetHandler().GetBlockByNumber(4, "")
+	block, err = gohfc.GetHandler().GetBlockByNumber(*blockNum, "")
 	if err != nil {
 		fmt.Println(err.Error())
 		return
@@ -70,16 +71,22 @@ func main() {
 	}
 	fmt.Println(lastConfig)
 
-	b := getValueFromBlockMetadata(block, common.BlockMetadataIndex_LAST_CONFIG)
-	fmt.Println(b)
-	fmt.Println()
+	if err = proto.Unmarshal(block.Metadata.Metadata[3], valueMetadata); err != nil {
+		return
+	}
+	kafkaMetadata := &ab.KafkaMetadata{}
+	if err = proto.Unmarshal(valueMetadata.Value, kafkaMetadata); err != nil {
+		return
+	}
+	fmt.Println(kafkaMetadata)
 
-	b = getValueFromBlockMetadata(block, 2)
+	b := getValueFromBlockMetadata(block, 2)
 	fmt.Println(b)
 	fmt.Println()
+	fmt.Println([]uint8(block.Metadata.Metadata[2]))
 
 	b = getValueFromBlockMetadata(block, 3)
-	fmt.Println(b)
+	fmt.Println("metadata[3]'s value:", b)
 	fmt.Println()
 
 	//	msgChan := make(chan define.BlockInfoAll, CHANNELBUFFER)
