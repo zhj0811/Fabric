@@ -1,64 +1,22 @@
 package define
 
-type FactorBaseInfo struct {
-	Key           string `json:"key"`           // 业务key
-	BusinessType  string `json:"businessType"`  // 业务类型 默认Import0001
-	DataType      string `json:"dataType"`      // 业务数据类型
-	WriteRoleType string `json:"writeRoleType"` // 写入数据角色类型
-	Writer        string `json:"writer"`        // 写入人id
-	Version       string `json:"version"`       // 数据版本号
-}
 type Factor struct {
-	FactorBaseInfo
-	BusinessData string `json:"businessData"` // 业务数据
-	Expand1      string `json:"expand1"`      // 扩展字段1
-	Expand2      string `json:"expand2"`      // 扩展地段2
-}
-
-type CustomsDeclarationInfo struct {
-	FactorBaseInfo
-	EntryID      string `json:"EntryID"`      // 报关单号
-	BusinessData string `json:"businessData"` // 业务数据
-	Expand1      string `json:"expand1"`      // 扩展字段1
-	Expand2      string `json:"expand2"`      // 扩展地段2
-}
-
-type FactorResponse struct {
-	FactorBaseInfo
-	ResponseCode    string `json:"responseCode"`    //返回码
-	ResponseExplain string `json:"responseExplain"` //返回说明
-}
-
-type QueryData struct {
-	Key           string `json:"key"`           // 业务key
-	BusinessType  string `json:"businessType"`  // 业务类型 默认Import0001
-	DataType      string `json:"dataType"`      // 业务数据类型
-	WriteRoleType string `json:"writeRoleType"` // 写入数据角色类型
-	Reader        string `json:"reader"`        //读取人
-}
-
-type QueryFormData struct {
-	Key           string `json:"key"`           // 业务key
-	BusinessType  string `json:"businessType"`  // 业务类型 默认Import0001
-	DataType      string `json:"dataType"`      // 业务数据类型
-	WriteRoleType string `json:"writeRoleType"` // 写入数据角色类型
-	Reader        string `json:"reader"`        //读取人
-	EntryID       string `json:"entryID"`       // 报关单号
-}
-
-type QueryDataResponse struct {
-	FactorBaseInfo
-	BusinessData    string `json:"businessData"`    // 业务数据
-	ResponseCode    string `json:"responseCode"`    //返回码
-	ResponseExplain string `json:"responseExplain"` //返回说明
-}
-
-type QueryFormDataResponse struct {
-	FactorBaseInfo
-	EntryID         string `json:"entryID"`         // 报关单号
-	BusinessData    string `json:"businessData"`    // 业务数据
-	ResponseCode    string `json:"responseCode"`    //返回码
-	ResponseExplain string `json:"responseExplain"` //返回说明
+	CreateBy        string   `json:"createBy"`        // 创建者
+	CreateTime      uint64   `json:"createTime"`      // 创建时间
+	Sender          string   `json:"sender"`          // 发送者
+	Receiver        []string `json:"receiver"`        // 接收者列表
+	TxData          string   `json:"txData"`          // 业务数据
+	AttachmentList  []FileInfo `json:"attachmentList"`  //附件列表
+	LastUpdateTime  uint64   `json:"lastUpdateTime"`  // 最近一次修改时间
+	LastUpdateBy    string   `json:"lastUpdateBy"`    // 最近一次修改者
+	CryptoFlag      int      `json:"cryptoFlag"`      // 加密标识（0:不加密，1:加密）
+	CryptoAlgorithm string   `json:"cryptoAlgorithm"` // 加密算法类型
+	DocType         string   `json:"docType"`         // 业务类型
+	FabricTxId      string   `json:"fabricTxId"`      // Fabric交易id(uuid)
+	BusinessNo      string   `json:"businessNo"`      // 业务编号（交易编号）
+	Expand1         string   `json:"expand1"`         // 扩展字段1
+	Expand2         string   `json:"expand2"`         // 扩展地段2
+	DataVersion     string   `json:"dataVersion"`     // 数据版本
 }
 
 type FileInfo struct {
@@ -70,12 +28,12 @@ type FileInfo struct {
 // BlockchainData 区块信息模型
 type BlockchainData struct {
 	TxId           string      `json:"txId"`        // 交易ID
-	TxHash         string      `json:"txHash"`      // 交易请求hash
-	BlockHash      string      `json:"blockHash"`   // 当前区块hash
-	BlockHeight    uint64      `json:"blockHeight"` // 当前区块高度
+	TxHash         string      `json:"txHash"`      //交易请求hash
+	BlockHash      string      `json:"blockHash"`   //当前区块hash
+	BlockHeight    uint64      `json:"blockHeight"` //当前区块高度
 	Bidbond        string      `json:"bidbond"`     // 投标保函唯一编号
 	Bid            string      `json:"bid"`         // 开立投标保函对应招标需求唯一编号
-	Progress       string      `json:"progress"`    // 进度描述信息
+	Progress       string      `json:"progress"`    //进度描述信息
 	CreateBy       string      `json:"createBy"`
 	CreateTime     uint64      `json:"createTime"`
 	Sender         string      `json:"sender"`

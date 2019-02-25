@@ -20,22 +20,54 @@ eventPeers:
     orgName: org1
     useTLS: true
     tlsPath: /opt/gopath/src/github.com/peersafe/worktool/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/server.crt
-channel:
+channels:
     mspConfigPath: /opt/gopath/src/github.com/peersafe/worktool/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
     localMspId:          Org1MSP
-    channelId:           mychannel
-    chaincodeName:       factor
-    chaincodeVersion:    1.0
-    chaincodePolicy:
-      orgs:
-        - org1
-        - org2
-      rule: or
+    channelInfo:
+      channel1:  #the first channel name
+        chaincodes:
+          factor1: #the first chaincode name installed in channel1
+            chaincodeVersion:    1.0
+            chaincodePolicy:
+              orgs:
+                - org1
+                - org2
+              rule: or
+          factor2:  #the second chaincode name installed in channel1
+            chaincodeVersion:    1.1
+            chaincodePolicy:
+              orgs:
+              - org1
+              rule: or
+      channel2:  #the second channel name
+        chaincodes:
+          fft:  #the first chaincode name installed in channel2
+            chaincodeVersion:    1.1
+            chaincodePolicy:
+              orgs:
+                - org1
+                - org2
+                - org3
+              rule: and
+eventchannels:
+  channel1:
+    chaincodes:
+      - factor1
+      - factor2
+  channel2:
+    chaincodes:
+      - fft
 mq:
-    mqEnable: false
-    mqAddress:
-      - "amqp://guest:guest@localhost:5672/"
-    queueName: "TradeQueue"
+  mqEnable: false
+  mqAddress:
+    - "amqp://guest:guest@localhost:5672/"
+    - "amqp://guest:guest@localhost:5673/"
+  queues:
+    queue1:
+      - channel1
+      - channel2
+    queue2:
+      - channel3
 log:
     logLevel: DEBUG
     logModelName: apiserver
@@ -47,6 +79,5 @@ apiserver:
       root: "root"
     listenport: 5984
     isHttps: false
-    probe_order: "127.0.0.1 7050"
 other:
     check_time: 2m

@@ -16,16 +16,27 @@ type ClientConfig struct {
 	Orderers      map[string]OrdererConfig `yaml:"orderers"`
 	Peers         map[string]PeerConfig    `yaml:"peers"`
 	EventPeers    map[string]PeerConfig    `yaml:"eventPeers"`
-	ChannelConfig `yaml:"channel"`
-	Mq            `yaml:"mq"`
+	EventChannelInfos map[string]EventChannelInfo `yaml:"eventchannels"`
+	ChannelConfig `yaml:"channels"`
 	Log           `yaml:"log"`
 }
 
 type ChannelConfig struct {
 	MspConfigPath    string `yaml:"mspConfigPath"`
 	LocalMspId       string `yaml:"localMspId"`
-	ChannelId        string `yaml:"channelId"`
-	ChaincodeName    string `yaml:"chaincodeName"`
+	ChannelInfos     map[string]ChannelInfo `yaml:"channelInfo"`
+}
+
+type EventChannelConfig struct {
+	FabricChannels []string `yaml:"fabricChannels"`
+	ChannelInfos map[string]EventChannelInfo  `yaml:"channelInfos"`
+}
+
+type ChannelInfo struct {
+	CCInfos map[string]ChaincodeInfo `yaml:"chaincodes"`
+}
+
+type ChaincodeInfo struct {
 	ChaincodeVersion string `yaml:"chaincodeVersion"`
 	ChaincodePolicy  `yaml:"chaincodePolicy"`
 }
@@ -35,9 +46,8 @@ type ChaincodePolicy struct {
 	Rule string   `yaml:"rule"`
 }
 
-type Mq struct {
-	MqAddress []string `yaml:"mqAddress"`
-	QueueName string   `yaml:"queueName"`
+type EventChannelInfo struct{
+	Chaincodes []string `yaml:"chaincodes"`
 }
 
 type Log struct {

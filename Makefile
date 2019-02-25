@@ -14,7 +14,7 @@
 #   - docker[-clean] - ensures all docker images are available[/cleaned]
 #   - docker-list - generates a list of docker images that 'make docker' produces
 
-BASE_VERSION = 1.1.1.0
+BASE_VERSION = 1.1.1.1
 PREV_VERSION = 1.0.4
 
 PROJECT_COMPANY = peerfintech

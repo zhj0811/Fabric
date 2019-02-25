@@ -2,10 +2,10 @@ package utils
 
 import (
 	"encoding/json"
-
-	"github.com/peersafe/tradetrain/define"
+	"github.com/peersafe/factoring/define"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
+	"time"
 )
 
 var myLogger = shim.NewLogger("utils")
@@ -19,8 +19,10 @@ func InvokeResponse(stub shim.ChaincodeStubInterface, err error, function string
 		myLogger.Debugf("Set event  %s\n.", function)
 		factordata, _ := json.Marshal(data)
 		if errTmp := stub.SetEvent(function, factordata); errTmp != nil {
-			myLogger.Errorf("set event error : %s", errTmp.Error())
+			myLogger.Errorf("the transaction is %s,set event error : %s", stub.GetTxID(),errTmp.Error())
 		}
+		myLogger.Infof("The invoke response txId is %s",stub.GetTxID())
+		myLogger.Debugf("The invoke response time is %d",time.Now().UnixNano()/1000000)
 	}
 	return nil, err
 }
@@ -31,10 +33,10 @@ func QueryResponse(err error, data interface{}, pageItem define.Page) ([]byte, e
 		Page:    pageItem,
 	}
 
-	payload, Marshalerr := json.Marshal(response)
+	payload, err := json.Marshal(response)
 	myLogger.Debug("**************************QueryResponse****************************")
 	myLogger.Debug(string(payload))
-	if Marshalerr != nil {
+	if err != nil {
 		myLogger.Debug("QueryResponse Json  encode error.")
 	}
 

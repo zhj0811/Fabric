@@ -1,15 +1,19 @@
 package handle
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os/exec"
 	"strings"
 	"time"
 
-	"github.com/peersafe/tradetrain/apiserver/utils"
-	"github.com/peersafe/tradetrain/common/metadata"
-	"github.com/peersafe/tradetrain/define"
+	"github.com/peersafe/factoring/apiserver/utils"
+	"github.com/peersafe/factoring/common/crypto"
+	"github.com/peersafe/factoring/common/metadata"
+	"github.com/peersafe/factoring/common/sdk"
+	"github.com/peersafe/factoring/define"
 
 	"github.com/op/go-logging"
 	"github.com/streadway/amqp"
@@ -23,6 +27,7 @@ const (
 	secondStageNum  = 50
 	firstStageTime  = 1
 	secondStageTime = 5
+	MaxFail = 3
 )
 
 var (
@@ -180,74 +185,33 @@ func GetUserAlias(mqAddrs []string, mqQueue, configPath, configFile string) {
 	logger.Error("----------GetUserAlias exit----------")
 }
 
-func ParaseInput(input []string) (interface{}, error) {
-	if len(input) < 2 {
-		return nil, fmt.Errorf("get cc input error")
+func decryptData(ms define.Message, recv string) (string, error) {
+	cryptoKey, ok := ms.PeersafeData.Keys[recv]
+	if !ok {
+		return "", fmt.Errorf("The message is for %s, but it does not has the user's cryptoKey", recv)
 	}
-	var request define.InvokeRequest
-	var b []byte
-	err := json.Unmarshal([]byte(input[1]), &request)
+	path := define.CRYPTO_PATH + recv + "/" + "enrollment.key"
+	privateKey, err := ioutil.ReadFile(path)
 	if err != nil {
-		return nil, err
+		return "", fmt.Errorf("ReadFile %s key error : %s", recv, err.Error())
 	}
 
-	message := define.Message{}
-	err = json.Unmarshal([]byte(request.Value), &message)
+	key, err := crypto.EciesDecrypt(cryptoKey, privateKey)
 	if err != nil {
-		return nil, err
-	}
-	if message.BusinessData != "" {
-		var payload define.Factor
-		err = utils.FormatResponseMessage(&payload, &message)
-		if err != nil {
-			return nil, err
-		}
-		eventResponse := define.Event{Payload: payload}
-		b, err = json.Marshal(eventResponse)
-		if err != nil {
-			return nil, err
-		}
-		logger.Debugf("the msg is %s\n", b)
-		return b, nil
+		return "", fmt.Errorf("EciesDecrypt %s random key error : %s", recv, err.Error())
 	}
 
-	accessMmessage := define.AccessMessage{}
-	err = json.Unmarshal([]byte(request.Value), &accessMmessage)
+	tempData, err := base64.StdEncoding.DecodeString(ms.TxData)
 	if err != nil {
-		return nil, err
-	}
-	if len(accessMmessage.ReaderList) != 0 {
-		var payload define.Access
-		err = utils.FormatResponseAccessMessage(&payload, &accessMmessage)
-		if err != nil {
-			return nil, err
-		}
-		eventResponse := define.Event{Payload: payload}
-		b, err = json.Marshal(eventResponse)
-		if err != nil {
-			return nil, err
-		}
-		logger.Debugf("the msg is %s\n", b)
-		return b, nil
+		return "", fmt.Errorf("base64 decode txdata failed.")
 	}
 
-	userInfoMessage := define.UserInfoMessage{}
-	err = json.Unmarshal([]byte(request.Value), &userInfoMessage)
+	data, err := crypto.AesDecrypt(tempData, key)
 	if err != nil {
-		return nil, err
-	}
-	if userInfoMessage.UserID != "" {
-		payload := userInfoMessage.UserInfo
-		eventResponse := define.Event{Payload: payload}
-		b, err = json.Marshal(eventResponse)
-		if err != nil {
-			return nil, err
-		}
-		logger.Debugf("the msg is %s\n", b)
-		return b, nil
+		return "", fmt.Errorf("AesDecrypt %s data error : %s", recv, err.Error())
 	}
 
-	return b, nil
+	return string(data), nil
 }
 
 func isSendInfo(receiver []string) (bool, error) {
@@ -262,7 +226,7 @@ func isSendInfo(receiver []string) (bool, error) {
 			return true, nil
 		}
 
-		if containsStr(userAlias, v) {
+		if ContainsStr(userAlias, v) {
 			logger.Debugf("The request's receiver meet the node's id: %s.", v)
 			return true, nil
 		}
@@ -272,11 +236,110 @@ func isSendInfo(receiver []string) (bool, error) {
 	return false, nil
 }
 
-func containsStr(strList []string, str string) bool {
+func ContainsStr(strList []string, str string) bool {
 	for _, v := range strList {
 		if v == str {
 			return true
 		}
 	}
 	return false
+}
+
+func ParseTransactions(input []string) (interface{}, error) {
+	if len(input) < 2 {
+		return nil, fmt.Errorf("get cc input error")
+	}
+
+	var request define.InvokeRequest
+	err := json.Unmarshal([]byte(input[1]), &request)
+	if err != nil {
+		return nil, err
+	}
+	var payload []define.Factor
+	message := define.Message{}
+	err = json.Unmarshal([]byte(request.Value), &message)
+	if err != nil {
+		return nil, err
+	}
+	//currentTime := time.Now()
+	//timeDiff := currentTime.UnixNano() / 1000000 - int64(message.CreateTime)
+	//fmt.Println(timeDiff)
+
+	err = utils.FormatResponseMessage(sdk.GetUserId(), &payload, &[]define.Message{message})
+	if err != nil {
+		return nil, err
+	}
+
+	eventResponse := define.Event{Payload: payload}
+	b, err := json.Marshal(eventResponse)
+	if err != nil {
+		return nil, err
+	}
+	logger.Debugf("the msg is %s\n", b)
+	tempReceiverList := append(message.Receiver, message.Sender)
+	if sdk.GetMqEnable() {
+		isSendMq, err := isSendInfo(tempReceiverList)
+		if err != nil {
+			return nil, err
+		} else if !isSendMq {
+			return nil, nil
+		}
+	}
+	logger.Infof("the businessNO %s successful with txid: %s is pushed",message.BusinessNo,message.FabricTxId)
+	return b, nil
+}
+
+func CheckBlockSyncState(checkTime time.Duration, channels []string) {
+	var curChainBlockHeight uint64
+	var curChainBlockNum uint64
+	var err error
+
+	failedTimes := make(map[string]uint8)
+	preRecordInfo := make(map[string]uint64)
+	channelNum := len(channels)
+
+	logger.Infof("start to check block number on chain and record file interval %v", checkTime)
+
+	ticker := time.NewTicker(checkTime)
+	for {
+		select {
+		case <-ticker.C:
+			for i := 0; i < channelNum; i++ {
+				recordBlockNum := recordInfos[channels[i]].RecordBlockInfo.BlockNumber
+				// if the previous block height in record file is not equal to the current value,
+				// which shows that listen gorouting is working
+				if recordBlockNum != preRecordInfo[channels[i]] {
+					logger.Debugf("the previous record height is %d and current record height is %d, normal",
+						preRecordInfo[channels[i]], recordBlockNum)
+					preRecordInfo[channels[i]] = recordBlockNum
+					continue
+				} else {
+					logger.Debugf("record height is %d, which stay the same.", recordBlockNum )
+				}
+
+				if curChainBlockHeight, err = sdk.GetBlockHeightByEventPeer(channels[i]); err != nil {
+					logger.Errorf("get block height for channel %s failed: %s", channels[i], err.Error())
+					failedTimes[channels[i]]++
+					goto Check
+				}
+				curChainBlockNum = curChainBlockHeight - 1
+				logger.Debugf("block height in peer for channel %s is %d", channels[i], curChainBlockNum)
+
+				if recordBlockNum != curChainBlockNum {
+					logger.Warningf("in channel %s, curChainBlockNum=%d, recordBlockNum=%d, which are not the same",
+						channels[i], curChainBlockNum, recordBlockNum)
+					failedTimes[channels[i]]++
+				} else {
+					failedTimes[channels[i]] = 0
+					continue
+				}
+
+				Check:
+				logger.Warningf("CheckBlockSyncState failed for %d times.", failedTimes)
+				if failedTimes[channels[i]] >= 3 {
+					panic(fmt.Errorf("the failed time of checking channel %s has reached the max times(3)", channels[i]))
+				}
+			}
+		}
+	}
 }

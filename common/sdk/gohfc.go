@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/peersafe/tradetrain/common/metadata"
-	"github.com/peersafe/tradetrain/define"
+	"github.com/peersafe/factoring/common/metadata"
+	"github.com/peersafe/factoring/define"
 
-	logging "github.com/op/go-logging"
+	"github.com/op/go-logging"
 	"github.com/peersafe/gohfc"
 	"github.com/spf13/viper"
 )
@@ -43,23 +43,30 @@ func SetLogLevel(level, name string) error {
 }
 
 func GetLogLevel(name string) string {
-	level := logging.GetLevel(name).String()
-	logger.Debugf("GetLogLevel level: %s, LogModule: %s\n", level, name)
-	return level
+	return gohfc.GetLogLevel(name)
 }
 
-func Invoke(in []string) (string, error) {
+func GetEventChannels() []string {
+	return gohfc.GetEventChannels()
+}
+
+func GetEventChannelInfos() map[string]gohfc.EventChannelInfo{
+	return gohfc.GetEventChannelInfos()
+}
+
+func Invoke(in []string,  channelName, chaincodeName string) (string, error) {
 	Handler := gohfc.GetHandler()
-	res, err := Handler.Invoke(in, "", "")
+	res, err := Handler.Invoke(in, channelName, chaincodeName)
 	if err != nil {
+		logger.Errorf("Invoke Response failed with error: %s", err.Error())
 		return "", err
 	}
-	logger.Info("Invoke Response Status : ", res.Status)
+	logger.Info("Invoke Response Status: ", res.Status)
 	return res.TxID, err
 }
 
-func GetBlockHeightByEndorserPeer() (uint64, error) {
-	blockHeight, err := gohfc.GetHandler().GetBlockHeight("")
+func GetBlockHeightByEndorserPeer(channelName string) (uint64, error) {
+	blockHeight, err := gohfc.GetHandler().GetBlockHeight(channelName)
 	if err != nil {
 		return 0, err
 	}
@@ -67,29 +74,35 @@ func GetBlockHeightByEndorserPeer() (uint64, error) {
 	return blockHeight, nil
 }
 
-func GetBlockHeightByEventPeer() (uint64, error) {
-	blockHeight, err := gohfc.GetHandler().GetBlockHeightByEventName("")
-	if err != nil {
+func GetBlockHeightByEventPeer(channelName string) (uint64, error) {
+	if blockHeight, err := gohfc.GetHandler().GetBlockHeightByEventName(channelName); err != nil {
+		logger.Errorf("get block height in channel %s failed: %s", channelName, err.Error())
 		return 0, err
-	}
-
-	return blockHeight, nil
-}
-
-func PeerKeepalive() error {
-	var info []string
-	info = append(info, define.KeepaliveQuery, "reduPara", "reduPara")
-	Handler := gohfc.GetHandler()
-	res, err := Handler.Query(info, "", "")
-	if err != nil {
-		return err
 	} else {
-		keepaliveResult := string(res[0].Response.Response.Payload)
-		if keepaliveResult == "Reached" {
-			return nil
-		} else {
-			return fmt.Errorf("peer cann't be reached")
-		}
+		logger.Debugf("the block height in channel %s is %d", channelName, blockHeight)
+		return blockHeight, nil
+	}
+}
+
+func PeerKeepalive(channelName, chaincodeName string) error {
+	var info []string
+	info = append(info, define.KeepaliveQuery, "reduPara")
+	Handler := gohfc.GetHandler()
+	res, err := Handler.Query(info, channelName, chaincodeName)
+	if err != nil || len(res) == 0 {
+		return fmt.Errorf("peer cann't found the value by key")
+	}
+	if res[0].Error != nil {
+		return res[0].Error
+	  } 
+	if res[0].Response.Response.GetStatus() != 200 {
+		return fmt.Errorf("peer status is wrong!")
+	}
+	keepaliveResult := string(res[0].Response.Response.Payload)
+	if keepaliveResult == "Reached" {
+		return nil
+	} else {
+		return fmt.Errorf("peer cann't be reached")
 	}
 }
 
@@ -104,21 +117,14 @@ func OrderKeepalive() error {
 	return nil
 }
 
-func QueryData(dateType string, txid string) ([]byte, error) {
-	var info []string
-	info = append(info, dateType, txid)
-	return Query(info)
-}
-
-func Query(in []string) ([]byte, error) {
+func Query(in []string, channelName, chaincodeName string) ([]byte, error) {
 	Handler := gohfc.GetHandler()
-	res, err := Handler.Query(in, "", "")
+	res, err := Handler.Query(in, channelName, chaincodeName)
 	if err != nil {
 		return nil, err
 	} else {
 		if res[0].Error != nil {
-			fmt.Println("error info %s", res[0].Error.Error())
-			return nil, res[0].Error
+			return nil, err
 		}
 	}
 	return res[0].Response.Response.Payload, nil

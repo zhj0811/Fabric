@@ -20,13 +20,12 @@ import (
 	"testing"
 
 	"encoding/json"
-	"os"
-	"time"
-
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	"github.com/hyperledger/fabric/protos/peer"
-	logging "github.com/op/go-logging"
-	"github.com/peersafe/tradetrain/chaincode/define"
+	"github.com/op/go-logging"
+	"github.com/peersafe/factoring/chaincode/define"
+	"os"
+	"time"
 )
 
 var myCCID = "factor"

@@ -11,9 +11,11 @@ import (
 func getSaveDataRequest(user string) []byte {
 	var factorList []define.Factor
 	data := define.Factor{
-		Writer:       user,
-		BusinessData: "test",
-		DataType:     0,
+		CreateBy:        user,
+		Sender:          user,
+		Receiver:        []string{user},
+		TxData:          "test",
+		CryptoFlag:      0,
 		//CryptoAlgorithm is used by hoperun, we don't need to care about it. By wuxu, 20170901
 		//CryptoAlgorithm: "aes",
 	}

@@ -9,14 +9,14 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/peersafe/tradetrain/apiserver/router"
-	"github.com/peersafe/tradetrain/common/metadata"
-	"github.com/peersafe/tradetrain/common/sdk"
+	"github.com/peersafe/factoring/apiserver/router"
+	"github.com/peersafe/factoring/common/metadata"
+	"github.com/peersafe/factoring/common/sdk"
 
 	"github.com/DeanThompson/ginpprof"
 	"github.com/fvbock/endless"
 	"github.com/gin-gonic/gin"
-	logging "github.com/op/go-logging"
+	"github.com/op/go-logging"
 	"github.com/spf13/viper"
 )
 
@@ -50,7 +50,6 @@ func main() {
 		logger.Errorf("SetLogLevel error : %s\n", err.Error())
 		return
 	}
-
 	// 设置使用系统最大CPU
 	runtime.GOMAXPROCS(runtime.NumCPU())
 

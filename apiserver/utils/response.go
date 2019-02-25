@@ -3,11 +3,11 @@ package utils
 import (
 	"encoding/json"
 
-	"github.com/peersafe/tradetrain/common/metadata"
-	"github.com/peersafe/tradetrain/define"
+	"github.com/peersafe/factoring/common/metadata"
+	"github.com/peersafe/factoring/define"
 
 	"github.com/gin-gonic/gin"
-	logging "github.com/op/go-logging"
+	"github.com/op/go-logging"
 )
 
 var logger = logging.MustGetLogger(metadata.LogModule)

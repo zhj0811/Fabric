@@ -1,0 +1,43 @@
+1. savedata interface
+curl -H "Content-Type: application/json" -X POST --data '[
+    {
+        "createBy":"",
+        "createTime":1534670562962,
+        "sender":"bankA",
+        "receiver":[
+            "bankB"
+        ],
+        "txData":"aaabbbb",
+        "attachmentList":[
+          {"name": "filename","hash": "filehash", "path": "filepath"}
+        ],
+        "lastUpdateTime":0,
+        "lastUpdateBy":"",
+        "cryptoFlag":0,
+        "cryptoAlgorithm":"",
+        "docType":"0",
+        "fabricTxId":"",
+        "businessNo":"hw_test124",
+        "expand1":"test_expand21",
+        "expand2":"test_expand22",
+        "dataVersion":"1.0"
+    }
+]' http://127.0.0.1:5555/trade/savedata
+
+2. businessno query interface
+curl -X GET http://127.0.0.1:5555/trade/tradeinfo?businessno=hw_test124
+
+3. fabrictxid query interface
+curl -X GET http://127.0.0.1:5555/trade/tradeinfo?fabrictxid=80683cc840b7c6e4c1925065013a7ba3568945adde922397e29498fa3686895b
+
+4. keepalive interface
+curl -I http://127.0.0.1:5555/trade/keepalive
+
+5. blockheight interface
+curl -X GET http://127.0.0.1:5555/trade/blockheight
+
+6. version interface
+curl -X GET http://127.0.0.1:5555/trade/version
+
+7. kafka info interface
+curl -X GET http://127.0.0.1:5555/trade/kafkaNumber

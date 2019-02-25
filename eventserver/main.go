@@ -3,28 +3,21 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
 
-	"github.com/peersafe/tradetrain/common/metadata"
-	"github.com/peersafe/tradetrain/common/sdk"
-	"github.com/peersafe/tradetrain/define"
-	"github.com/peersafe/tradetrain/eventserver/check"
-	"github.com/peersafe/tradetrain/eventserver/handle"
-	mq "github.com/peersafe/tradetrain/eventserver/messagequeue"
+	"github.com/peersafe/factoring/common/metadata"
+	"github.com/peersafe/factoring/common/sdk"
+	"github.com/peersafe/factoring/eventserver/handle"
+	mq "github.com/peersafe/factoring/eventserver/messagequeue"
 
-	//"github.com/hyperledger/fabric/common/flogging"
 	"github.com/op/go-logging"
 	"github.com/spf13/viper"
 )
 
 // package-scoped constants
-
-const CHANNELBUFFER = 1000
-
 const packageName = "eventserver"
 
 var (
-	logOutput  = os.Stderr
+	//logOutput  = os.Stderr
 	configPath = flag.String("configPath", "./", "config path")
 	configName = flag.String("configName", "client_sdk", "config file name")
 	isVersion  = flag.Bool("v", false, "Show version information")
@@ -32,15 +25,17 @@ var (
 )
 
 func main() {
+	var err error
+
 	flag.Parse()
+	// print the version info and exit the program
 	if *isVersion {
 		printVersion()
 		return
 	}
 
-	err := sdk.InitSDKs(*configPath, *configName)
-	if err != nil {
-		fmt.Println(err.Error())
+	if err = sdk.InitSDKs(*configPath, *configName); err != nil {
+		fmt.Printf("init sdk failed: %s\n", err.Error())
 		return
 	}
 	/*
@@ -53,36 +48,35 @@ func main() {
 	userAlias := viper.GetString("user.id")
 	handle.SetUserAlias(userAlias)
 
-	mqEnable := viper.GetBool("mq.mqEnable")
-	logger.Debugf("mq enable is %v.", mqEnable)
-	if mqEnable {
-		mqAddresses := viper.GetStringSlice("mq.mqAddress")
-		queueName := viper.GetString("mq.queueName")
-		systemQueueName := viper.GetString("mq.systemQueueName")
+	if !mq.InitMQBaseInfo() {
+		logger.Errorf("init mq's base info failed!")
+		return
+	}
+	defer mq.Close()
 
-		if len(mqAddresses) == 0 {
-			logger.Panic("The mq_address is empty!")
-		}
+	eventChannels := sdk.GetEventChannels()
+	eventChannelInfos := sdk.GetEventChannelInfos()
 
-		if !mq.InitMQ(queueName, mqAddresses...) {
-			logger.Panic("init message queue failed!")
-		}
-		defer mq.Close()
-
-		go handle.GetUserAlias(mqAddresses, systemQueueName, *configPath, *configName)
+	if err := handle.InitRecordInfos(eventChannels); err != nil {
+		logger.Errorf("Init record info failed: %s", err.Error())
+		return
+	}
+	if err = handle.InitBlockHeight(eventChannels); err != nil {
+		logger.Errorf("Init block height failed: %s", err.Error())
+		return
 	}
 
-	msgChan := make(chan define.BlockInfoAll, CHANNELBUFFER)
-	go handle.ListenMsgChannel(msgChan)
-	handle.CheckAndRecoverEvent(msgChan)
-	go handle.ListenEvent(msgChan)
-
 	//listen the block event and parse the message
-	//go le.ListenEvent(eventAddress, chainID, handle.FilterEvent, listenToHandle)
-	//check and recover the message
-	//go handle.CheckAndRecoverEvent(peerClients, chainID, handle.FilterEvent, listenToHandle, currentBlockHeight)
+	for _, channel := range eventChannels {
+		chaincodes := make(map[string]bool)
+		for _, chaincode := range eventChannelInfos[channel].Chaincodes {
+			chaincodes[chaincode] = true
+		}
+		go handle.ListenEvent(channel, chaincodes)
+	}
 
-	check.CheckRecover(checkTime)
+	//check recover height according to This checkTime
+	handle.CheckBlockSyncState(checkTime, eventChannels)
 }
 
 func printVersion() {

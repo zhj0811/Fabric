@@ -3,13 +3,15 @@ package gohfc
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"strconv"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/protos/common"
 	"github.com/op/go-logging"
 	"github.com/peersafe/gohfc/parseBlock"
 	"google.golang.org/grpc/connectivity"
-	"strconv"
 )
 
 //sdk handler
@@ -19,13 +21,14 @@ type sdkHandler struct {
 }
 
 var (
-	logger          = logging.MustGetLogger("sdk")
-	handler         sdkHandler
-	orgPeerMap      = make(map[string][]string)
-	orderNames      []string
-	peerNames       []string
-	eventName       string
-	orRulePeerNames []string
+	logger           = logging.MustGetLogger("sdk")
+	handler          sdkHandler
+	orgPeerMap       = make(map[string][]string)
+	rulePeerNames    = make(map[string][]string)
+	channelPeerNames = make(map[string][]string)
+	peerNames        = make(map[string][]string)
+	orderNames       []string
+	eventName        string
 )
 
 func InitSDK(configPath string) error {
@@ -75,10 +78,26 @@ func GetConfigLogLevel() string {
 	return handler.client.Log.LogLevel
 }
 
+func GetEventChannelInfos() map[string]EventChannelInfo {
+	return handler.client.EventChannel.ChannelInfos
+}
+
+func GetEventChannels() []string {
+	return handler.client.EventChannel.FabricChannels
+}
+
+// GetHandler get sdk handler
+/*
+func GetChaincodeName() string {
+	return handler.client.Channel.ChaincodeName
+}
+*/
+
 // Invoke invoke cc ,if channelName ,chaincodeName is nil that use by client_sdk.yaml set value
 func (sdk *sdkHandler) Invoke(args []string, channelName, chaincodeName string) (*InvokeResponse, error) {
-	peerNames := getSendPeerName()
+	peerNames := getSendPeerName(channelName, chaincodeName)
 	orderName := getSendOrderName()
+	logger.Debugf("peerNames is %s and ordererName is %s", peerNames, orderName)
 	if len(peerNames) == 0 || orderName == "" {
 		return nil, fmt.Errorf("config peer order is err")
 	}
@@ -90,22 +109,24 @@ func (sdk *sdkHandler) Invoke(args []string, channelName, chaincodeName string) 
 }
 
 // Query query cc  ,if channelName ,chaincodeName is nil that use by client_sdk.yaml set value
+// peerNames just have one peer currently
 func (sdk *sdkHandler) Query(args []string, channelName, chaincodeName string) ([]*QueryResponse, error) {
-	peerNames := getSendPeerName()
+	peerNames := getSendPeerName(channelName, "")
 	if len(peerNames) == 0 {
 		return nil, fmt.Errorf("config peer order is err")
 	}
+	logger.Debugf("try to query in peer: %s", peerNames)
 	chaincode, err := getChainCodeObj(args, channelName, chaincodeName)
 	if err != nil {
 		return nil, err
 	}
 
-	return sdk.client.Query(*sdk.identity, *chaincode, []string{peerNames[0]})
+	return sdk.client.Query(*sdk.identity, *chaincode, peerNames)
 }
 
 // Query query qscc ,if channelName ,chaincodeName is nil that use by client_sdk.yaml set value
 func (sdk *sdkHandler) QueryByQscc(args []string, channelName string) ([]*QueryResponse, error) {
-	peerNames := getSendPeerName()
+	peerNames := getSendPeerName(channelName, "")
 	if len(peerNames) == 0 {
 		return nil, fmt.Errorf("config peer order is err")
 	}
@@ -128,11 +149,8 @@ func (sdk *sdkHandler) QueryByQscc(args []string, channelName string) ([]*QueryR
 // if channelName ,chaincodeName is nil that use by client_sdk.yaml set value
 func (sdk *sdkHandler) GetBlockByNumber(blockNum uint64, channelName string) (*common.Block, error) {
 	strBlockNum := strconv.FormatUint(blockNum, 10)
-	if len(channelName) == 0 {
-		channelName = sdk.client.Channel.ChannelId
-	}
 	if channelName == "" {
-		return nil, fmt.Errorf("GetBlockHeight channelName is empty ")
+		return nil, fmt.Errorf("channelName is empty ")
 	}
 	args := []string{"GetBlockByNumber", channelName, strBlockNum}
 	logger.Debugf("GetBlockByNumber chainId %s num %s", channelName, strBlockNum)
@@ -157,9 +175,6 @@ func (sdk *sdkHandler) GetBlockByNumber(blockNum uint64, channelName string) (*c
 
 // if channelName ,chaincodeName is nil that use by client_sdk.yaml set value
 func (sdk *sdkHandler) GetBlockHeight(channelName string) (uint64, error) {
-	if len(channelName) == 0 {
-		channelName = sdk.client.Channel.ChannelId
-	}
 	if channelName == "" {
 		return 0, fmt.Errorf("GetBlockHeight channelName is empty ")
 	}
@@ -186,9 +201,6 @@ func (sdk *sdkHandler) GetBlockHeight(channelName string) (uint64, error) {
 
 // if channelName ,chaincodeName is nil that use by client_sdk.yaml set value
 func (sdk *sdkHandler) GetBlockHeightByEventName(channelName string) (uint64, error) {
-	if len(channelName) == 0 {
-		channelName = sdk.client.Channel.ChannelId
-	}
 	args := []string{"GetChainInfo", channelName}
 	mspId := handler.client.Channel.LocalMspId
 	if channelName == "" || mspId == "" {
@@ -225,38 +237,29 @@ func (sdk *sdkHandler) GetBlockHeightByEventName(channelName string) (uint64, er
 }
 
 // if channelName ,chaincodeName is nil that use by client_sdk.yaml set value
-func (sdk *sdkHandler) ListenEventFullBlock(channelName string) (chan parseBlock.Block, error) {
-	if len(channelName) == 0 {
-		channelName = sdk.client.Channel.ChannelId
-	}
+func (sdk *sdkHandler) ListenEventFullBlock(channelName string, startNum int) (chan parseBlock.Block, error) {
 	if channelName == "" {
 		return nil, fmt.Errorf("ListenEventFullBlock channelName is empty ")
 	}
 	ch := make(chan parseBlock.Block)
 	ctx, cancel := context.WithCancel(context.Background())
-	err := sdk.client.ListenForFullBlock(ctx, *sdk.identity, eventName, channelName, ch)
+	err := sdk.client.ListenForFullBlock(ctx, *sdk.identity, startNum, eventName, channelName, ch)
 	if err != nil {
 		cancel()
 		return nil, err
 	}
-	//
-	//for d := range ch {
-	//	fmt.Println(d)
-	//}
+
 	return ch, nil
 }
 
 // if channelName ,chaincodeName is nil that use by client_sdk.yaml set value
-func (sdk *sdkHandler) ListenEventFilterBlock(channelName string) (chan EventBlockResponse, error) {
-	if len(channelName) == 0 {
-		channelName = sdk.client.Channel.ChannelId
-	}
+func (sdk *sdkHandler) ListenEventFilterBlock(channelName string, startNum int) (chan EventBlockResponse, error) {
 	if channelName == "" {
 		return nil, fmt.Errorf("ListenEventFilterBlock  channelName is empty ")
 	}
 	ch := make(chan EventBlockResponse)
 	ctx, cancel := context.WithCancel(context.Background())
-	err := sdk.client.ListenForFilteredBlock(ctx, *sdk.identity, eventName, channelName, ch)
+	err := sdk.client.ListenForFilteredBlock(ctx, *sdk.identity, startNum, eventName, channelName, ch)
 	if err != nil {
 		cancel()
 		return nil, err
@@ -271,9 +274,6 @@ func (sdk *sdkHandler) ListenEventFilterBlock(channelName string) (chan EventBlo
 //if channelName ,chaincodeName is nil that use by client_sdk.yaml set value
 // Listen v 1.0.4 -- port ==> 7053
 func (sdk *sdkHandler) Listen(peerName, channelName string) (chan parseBlock.Block, error) {
-	if len(channelName) == 0 {
-		channelName = sdk.client.Channel.ChannelId
-	}
 	if channelName == "" {
 		return nil, fmt.Errorf("Listen  channelName is empty ")
 	}
@@ -304,11 +304,11 @@ func (sdk *sdkHandler) GetOrdererConnect() (bool, error) {
 			} else {
 				return false, fmt.Errorf("the orderer connect state %s:%s", orderName, ord.con.GetState().String())
 			}
-		}else {
+		} else {
 			return false, fmt.Errorf("the orderer or connect is nil")
 		}
-	}else {
-		return false, fmt.Errorf("the orderer %s is not match",orderName)
+	} else {
+		return false, fmt.Errorf("the orderer %s is not match", orderName)
 	}
 }
 
@@ -316,6 +316,17 @@ func (sdk *sdkHandler) GetOrdererConnect() (bool, error) {
 func (sdk *sdkHandler) ParseCommonBlock(block *common.Block) (*parseBlock.Block, error) {
 	blockObj := parseBlock.ParseBlock(block, 0)
 	return &blockObj, nil
+}
+
+// param channel only used for create channel, if upate config channel should be nil
+func (sdk *sdkHandler) ConfigUpdate(payload []byte, channel string) error {
+	orderName := getSendOrderName()
+	if channel != "" {
+		return sdk.client.ConfigUpdate(*sdk.identity, payload, channel, orderName)
+	} else {
+		return errors.New("channel is empty!")
+	}
+	//return sdk.client.ConfigUpdate(*sdk.identity, payload, sdk.client.Channel.ChannelId, orderName)
 }
 
 type KeyValue struct {

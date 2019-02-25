@@ -1,16 +1,16 @@
 package define
 
 const (
-	SaveData       = "SaveData"
-	SaveACL        = "SaveACL"
+	SaveData = "SaveData"
 	KeepaliveQuery = "KeepaliveQuery"
-	QueryDataByKey = "QueryDataByKey"
-	QueryListById  = "QueryListById"
-	SaveUserInfo   = "SaveUserInfo"
-	QueryUserdata  = "QueryUserdata"
+	QueryDataByFabricTxId = "QueryDataByFabricTxId"
+	QueryDataByBusinessNo = "QueryDataByBusinessNo"
 	DSL_QUERY      = "DslQuery"
 	CRYPTO_PATH    = "./crypto/"
-	SaveTable      = "SaveTable"
+
+	ChannelName = "Channelname"
+	ChaincodeName = "Chaincodename"
+	ChaincodeVersion = "Chaincodeversion"
 
 	PeerFailed            = 601
 	OrdererFailed         = 602
@@ -18,13 +18,17 @@ const (
 	KafkaConfigFailed     = 604
 	KafkaConnectionFailed = 605
 	KafkaBrokerAbnormal   = 606
-	LogModuleInvalid      = 607
-	LogModuleSetError     = 608
+	ReadReuqestError      = 607
+	UnmarshalError        = 608
+	LogModuleInvalid      = 609
+	LogModuleSetError     = 610
+)
 
-	Success            = "900"
-	ParameterError     = "901"
-	PermissionNotFound = "902"
-	ValueOfKeyNil      = "903"
-	NoPermission       = "904"
-	Other              = "905"
+type CheckFabricBaseInfo int
+const (
+	NOCFBI CheckFabricBaseInfo = iota
+	CNameCFBI
+	CCNameCFBI
+	CCVersionCFBI
+	CNameAndCCNameCFBI
 )

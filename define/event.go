@@ -1,5 +1,10 @@
 package define
 
+import (
+	"os"
+	"sync"
+)
+
 type Event struct {
 	Payload interface{} `json:"payload"`
 }
@@ -48,4 +53,10 @@ type BlockInfo struct {
 type BlockInfoAll struct {
 	BlockInfo
 	MsgInfo interface{} `json:"msgInfo"`
+}
+
+type RecordInfo struct {
+	RWMutex sync.RWMutex `json:"rwMutex"`
+	GlobalFile *os.File `json:"globalFile"`
+	RecordBlockInfo *BlockInfo `json:"recordBlockInfo"`
 }
