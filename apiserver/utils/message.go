@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/peersafe/factoring/define"
-	"github.com/peersafe/factoring/common/crypto"
+	"github.com/zhaojianpeerfintech/fabric/define"
+	"github.com/zhaojianpeerfintech/fabric/common/crypto"
 )
 
 // FormatRequestMessage format requset to message json

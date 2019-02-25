@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/peersafe/factoring/common/metadata"
-	"github.com/peersafe/factoring/define"
+	"github.com/zhaojianpeerfintech/fabric/common/metadata"
+	"github.com/zhaojianpeerfintech/fabric/define"
 
 	"github.com/op/go-logging"
 	"github.com/peersafe/gohfc"

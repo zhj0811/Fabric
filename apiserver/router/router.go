@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/peersafe/factoring/apiserver/handler"
+	"github.com/zhaojianpeerfintech/fabric/apiserver/handler"
 
 	"github.com/gin-gonic/gin"
 )
@@ -46,6 +46,18 @@ func createRouter() *gin.Engine {
 		//factor.GET("/block/:id", handler.BlockQuery)
 		//factor.GET("/blockQuery/:id", handler.BlockQueryEx)
 	}
+
+	galaxy := router.Group("/galaxy")
+	{
+		galaxy.POST("/saveRegistration", handler.SaveRegistration)
+		galaxy.GET("/queryRegistration", handler.QueryRegistration)
+
+		galaxy.GET("/blockheight", handler.BlockHeight)
+		galaxy.HEAD("/keepalive", handler.Keepalive)
+		galaxy.GET("/keepalive", handler.Keepalive)		
+		galaxy.GET("/version", handler.Version)
+	}
+
 	//upload schema json file
 	router.StaticFS("/schema", http.Dir("./schema"))
 	return router
