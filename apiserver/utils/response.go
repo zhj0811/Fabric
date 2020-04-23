@@ -3,8 +3,8 @@ package utils
 import (
 	"encoding/json"
 
-	"github.com/peersafe/tradetrain/common/metadata"
-	"github.com/peersafe/tradetrain/define"
+	"github.com/zhj0811/fabric/common/metadata"
+	"github.com/zhj0811/fabric/define"
 
 	"github.com/gin-gonic/gin"
 	logging "github.com/op/go-logging"

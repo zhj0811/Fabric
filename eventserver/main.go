@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/peersafe/tradetrain/common/metadata"
-	"github.com/peersafe/tradetrain/common/sdk"
-	"github.com/peersafe/tradetrain/define"
-	"github.com/peersafe/tradetrain/eventserver/check"
-	"github.com/peersafe/tradetrain/eventserver/handle"
-	mq "github.com/peersafe/tradetrain/eventserver/messagequeue"
+	"github.com/zhj0811/fabric/common/metadata"
+	"github.com/zhj0811/fabric/common/sdk"
+	"github.com/zhj0811/fabric/define"
+	"github.com/zhj0811/fabric/eventserver/check"
+	"github.com/zhj0811/fabric/eventserver/handle"
+	mq "github.com/zhj0811/fabric/eventserver/messagequeue"
 
 	//"github.com/hyperledger/fabric/common/flogging"
 	"github.com/op/go-logging"

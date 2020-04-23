@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/peersafe/tradetrain/define"
+	"github.com/zhj0811/fabric/define"
 
 	"github.com/Shopify/sarama"
 	"github.com/spf13/viper"

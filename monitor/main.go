@@ -9,15 +9,15 @@ import (
 	"github.com/zhaojianpeerfintech/fabric/common/metadata"
 	"github.com/zhaojianpeerfintech/fabric/common/sdk"
 	//	"github.com/zhaojianpeerfintech/fabric/define"
-	//"github.com/zhaojianpeerfintech/tradetrain/eventserver/check"
-	//	"github.com/zhaojianpeerfintech/tradetrain/eventserver/handle"
+	//"github.com/zhaojianpeerfintech/fabric/eventserver/check"
+	//	"github.com/zhaojianpeerfintech/fabric/eventserver/handle"
 
 	//"github.com/hyperledger/fabric/common/flogging"
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/protos/common"
 	ab "github.com/hyperledger/fabric/protos/orderer"
 	"github.com/op/go-logging"
-	"github.com/peersafe/gohfc"
+	"github.com/zhj0811/gohfc"
 	"github.com/spf13/viper"
 )
 

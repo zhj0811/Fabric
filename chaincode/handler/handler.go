@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
-	"github.com/peersafe/tradetrain/chaincode/utils"
-	"github.com/peersafe/tradetrain/define"
+	"github.com/zhj0811/fabric/chaincode/utils"
+	"github.com/zhj0811/fabric/define"
 )
 
 var KEEPALIVETEST = "test"

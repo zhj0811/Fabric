@@ -4,9 +4,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/peersafe/tradetrain/common/metadata"
-	"github.com/peersafe/tradetrain/common/sdk"
-	"github.com/peersafe/tradetrain/eventserver/handle"
+	"github.com/zhj0811/fabric/common/metadata"
+	"github.com/zhj0811/fabric/common/sdk"
+	"github.com/zhj0811/fabric/eventserver/handle"
 
 	"github.com/op/go-logging"
 )

@@ -19,7 +19,7 @@ PREV_VERSION = 1.0.4
 
 PROJECT_COMPANY = peerfintech
 PROJECT_NAME = factoring
-PKGNAME = github.com/peersafe/$(PROJECT_NAME)
+PKGNAME = github.com/zhj0811/$(PROJECT_NAME)
 CGO_FLAGS = CGO_CFLAGS=" "
 GO_TAGS ?=
 DBUILD = docker build

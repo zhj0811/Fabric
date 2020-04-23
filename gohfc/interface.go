@@ -7,7 +7,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/protos/common"
 	"github.com/op/go-logging"
-	"github.com/peersafe/gohfc/parseBlock"
+	"github.com/zhj0811/gohfc/parseBlock"
 	"google.golang.org/grpc/connectivity"
 	"strconv"
 )

@@ -7,11 +7,11 @@ import (
 	"os"
 	"sync"
 
-	"github.com/peersafe/tradetrain/common/sdk"
-	"github.com/peersafe/tradetrain/define"
-	"github.com/peersafe/tradetrain/eventserver/messagequeue"
+	"github.com/zhj0811/fabric/common/sdk"
+	"github.com/zhj0811/fabric/define"
+	"github.com/zhj0811/fabric/eventserver/messagequeue"
 
-	"github.com/peersafe/gohfc"
+	"github.com/zhj0811/gohfc"
 )
 
 const (

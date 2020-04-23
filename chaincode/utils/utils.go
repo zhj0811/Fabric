@@ -3,7 +3,7 @@ package utils
 import (
 	"encoding/json"
 
-	"github.com/peersafe/tradetrain/define"
+	"github.com/zhj0811/fabric/define"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 )

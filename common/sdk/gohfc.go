@@ -5,11 +5,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/peersafe/tradetrain/common/metadata"
-	"github.com/peersafe/tradetrain/define"
+	"github.com/zhj0811/fabric/common/metadata"
+	"github.com/zhj0811/fabric/define"
 
 	logging "github.com/op/go-logging"
-	"github.com/peersafe/gohfc"
+	"github.com/zhj0811/gohfc"
 	"github.com/spf13/viper"
 )
 

@@ -26,7 +26,7 @@ import (
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	"github.com/hyperledger/fabric/protos/peer"
 	logging "github.com/op/go-logging"
-	"github.com/peersafe/tradetrain/chaincode/define"
+	"github.com/zhj0811/fabric/chaincode/define"
 )
 
 var myCCID = "factor"

@@ -3,7 +3,7 @@ package listenevent
 import (
 	"os"
 
-	"github.com/peersafe/tradetrain/common/metadata"
+	"github.com/zhj0811/fabric/common/metadata"
 
 	"github.com/op/go-logging"
 )

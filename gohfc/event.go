@@ -14,7 +14,7 @@ import (
 	"github.com/hyperledger/fabric/protos/msp"
 	"github.com/hyperledger/fabric/protos/orderer"
 	"github.com/hyperledger/fabric/protos/peer"
-	"github.com/peersafe/gohfc/parseBlock"
+	"github.com/zhj0811/gohfc/parseBlock"
 	"google.golang.org/grpc"
 	"io"
 	"math"

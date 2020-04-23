@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/peersafe/tradetrain/define"
+	"github.com/zhj0811/fabric/define"
 )
 
 // FormatRequestMessage format requset to message json

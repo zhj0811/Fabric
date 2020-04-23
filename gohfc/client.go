@@ -13,7 +13,7 @@ import (
 	"github.com/hyperledger/fabric/protos/common"
 	"github.com/hyperledger/fabric/protos/orderer"
 	"github.com/hyperledger/fabric/protos/peer"
-	"github.com/peersafe/gohfc/parseBlock"
+	"github.com/zhj0811/gohfc/parseBlock"
 )
 
 // FabricClient expose API's to work with Hyperledger Fabric

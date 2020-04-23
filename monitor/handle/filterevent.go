@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/peersafe/tradetrain/apiserver/utils"
-	"github.com/peersafe/tradetrain/common/metadata"
-	"github.com/peersafe/tradetrain/define"
+	"github.com/zhj0811/fabric/apiserver/utils"
+	"github.com/zhj0811/fabric/common/metadata"
+	"github.com/zhj0811/fabric/define"
 
 	"github.com/op/go-logging"
 	"github.com/streadway/amqp"
