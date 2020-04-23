@@ -3,8 +3,9 @@
 *.dll
 *.so
 *.dylib
+go.sum
 
 
-/vendor/
+vendor/
 .idea/
 .vscode/

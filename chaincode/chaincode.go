@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/peersafe/tradetrain/chaincode/handler"
-	"github.com/peersafe/tradetrain/define"
+	"github.com/zhj0811/fabric/chaincode/handler"
+	"github.com/zhj0811/fabric/define"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	pb "github.com/hyperledger/fabric/protos/peer"
