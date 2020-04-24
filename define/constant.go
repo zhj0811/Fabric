@@ -2,15 +2,9 @@ package define
 
 const (
 	SaveData       = "SaveData"
-	SaveACL        = "SaveACL"
+	QueryData      = "QueryData"
 	KeepaliveQuery = "KeepaliveQuery"
-	QueryDataByKey = "QueryDataByKey"
-	QueryListById  = "QueryListById"
-	SaveUserInfo   = "SaveUserInfo"
-	QueryUserdata  = "QueryUserdata"
-	DSL_QUERY      = "DslQuery"
 	CRYPTO_PATH    = "./crypto/"
-	SaveTable      = "SaveTable"
 
 	PeerFailed            = 601
 	OrdererFailed         = 602
