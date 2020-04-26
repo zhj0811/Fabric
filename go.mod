@@ -3,7 +3,9 @@ module github.com/zhj0811/fabric
 go 1.14
 
 require (
+	github.com/DeanThompson/ginpprof v0.0.0-20190408063150-3be636683586 // indirect
 	github.com/Shopify/sarama v1.26.1
+	github.com/fvbock/endless v0.0.0-20170109170031-447134032cb6 // indirect
 	github.com/gin-gonic/gin v1.6.2 // indirect
 	github.com/hyperledger/fabric-chaincode-go v0.0.0-20200330074746-2584993c3b5e // indirect
 	github.com/hyperledger/fabric-protos-go v0.0.0-20200422100619-316dc6798e96 // indirect

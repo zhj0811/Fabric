@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/protos/common"
 	"github.com/op/go-logging"
 	"github.com/zhj0811/gohfc/parseBlock"
 	"google.golang.org/grpc/connectivity"
-	"strconv"
 )
 
 //sdk handler
@@ -304,11 +305,11 @@ func (sdk *sdkHandler) GetOrdererConnect() (bool, error) {
 			} else {
 				return false, fmt.Errorf("the orderer connect state %s:%s", orderName, ord.con.GetState().String())
 			}
-		}else {
+		} else {
 			return false, fmt.Errorf("the orderer or connect is nil")
 		}
-	}else {
-		return false, fmt.Errorf("the orderer %s is not match",orderName)
+	} else {
+		return false, fmt.Errorf("the orderer %s is not match", orderName)
 	}
 }
 
@@ -340,7 +341,7 @@ func SetArgsTxid(txid string, args *[]string) {
 		v, _ := json.Marshal(msg)
 		invokeRequest.Value = string(v)
 		tempData, _ := json.Marshal(invokeRequest)
-		//logger.Debugf("SetArgsTxid msg is %s", tempData)
+		//logging.Debugf("SetArgsTxid msg is %s", tempData)
 		(*args)[1] = string(tempData)
 	}
 }

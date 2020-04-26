@@ -1,4 +1,4 @@
-package logger
+package logging
 
 import (
 	"fmt"
@@ -49,7 +49,7 @@ func TestZap(t *testing.T) {
 		zap.Duration("backoff", time.Second),
 	)
 	//atom.SetLevel(zap.WarnLevel)
-	//core := logger.Core().SetLevel
+	//core := logging.Core().SetLevel
 	core := logger.Core()
 	fmt.Printf("%#v\n", core)
 	logger.Core().Enabled(zapcore.Level(4))

@@ -5,14 +5,14 @@ import (
 	pb "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/pkg/errors"
 	"github.com/zhj0811/fabric/define"
-	mylogger "github.com/zhj0811/fabric/pkg/logger"
+	"github.com/zhj0811/fabric/pkg/logging"
 )
 
 const (
 	KEEPALIVE = "keepalive"
 )
 
-var logger = mylogger.NewSugaredLogger("DEBUG", "")
+var logger = logging.NewSugaredLogger("DEBUG", "")
 
 type handlerFunc func(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error)
 
@@ -41,7 +41,7 @@ func (t *FactoryChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 
 func (t *FactoryChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	function, args := stub.GetFunctionAndParameters()
-	//logger.Debug("Invoke function=%v,args=%v\n", function, args)
+	//logging.Debug("Invoke function=%v,args=%v\n", function, args)
 	logger.Debugf("Invoke function=%s,args=%s", function, args)
 	if len(args) < 1 || len(args[0]) == 0 {
 		err := errors.New("the invoke args not exist or arg[0] is empty")

@@ -9,6 +9,8 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/op/go-logging"
+
 	"github.com/zhj0811/fabric/apiserver/router"
 	"github.com/zhj0811/fabric/common/metadata"
 	"github.com/zhj0811/fabric/common/sdk"
@@ -16,8 +18,8 @@ import (
 	"github.com/DeanThompson/ginpprof"
 	"github.com/fvbock/endless"
 	"github.com/gin-gonic/gin"
-	logging "github.com/op/go-logging"
 	"github.com/spf13/viper"
+	logging "github.com/zhj0811/fabric/pkg/logging"
 )
 
 var (
@@ -27,7 +29,7 @@ var (
 )
 
 // package-scoped variables
-var logger = logging.MustGetLogger(metadata.LogModule)
+var logger = logging.New
 
 // package-scoped constants
 const packageName = "apiserver"
