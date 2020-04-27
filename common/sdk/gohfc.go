@@ -5,16 +5,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/zhj0811/fabric/common/metadata"
-	"github.com/zhj0811/fabric/define"
-
-	logging "github.com/op/go-logging"
-	"github.com/zhj0811/gohfc"
+	"github.com/peerfintech/gohfc"
 	"github.com/spf13/viper"
+	"github.com/zhj0811/fabric/pkg/logging"
 )
 
 var (
-	logger = logging.MustGetLogger(metadata.LogModule)
+	logger = logging.NewSugaredLogger("debug", "apisdk")
 )
 
 func InitSDKs(path, name string) error {
@@ -38,19 +35,19 @@ func InitSDKs(path, name string) error {
 	return nil
 }
 
-func SetLogLevel(level, name string) error {
-	return gohfc.SetLogLevel(level, name)
-}
+//func SetLogLevel(level, name string) error {
+//	return gohfc.SetLogLevel(level, name)
+//}
+//
+//func GetLogLevel(name string) string {
+//	level := logging.GetLevel(name).String()
+//	logger.Debugf("GetLogLevel level: %s, LogModule: %s\n", level, name)
+//	return level
+//}
 
-func GetLogLevel(name string) string {
-	level := logging.GetLevel(name).String()
-	logger.Debugf("GetLogLevel level: %s, LogModule: %s\n", level, name)
-	return level
-}
-
-func Invoke(in []string) (string, error) {
+func Invoke(info []string) (string, error) {
 	Handler := gohfc.GetHandler()
-	res, err := Handler.Invoke(in, "", "")
+	res, err := Handler.Invoke(info, nil, "", "")
 	if err != nil {
 		return "", err
 	}
@@ -76,22 +73,22 @@ func GetBlockHeightByEventPeer() (uint64, error) {
 	return blockHeight, nil
 }
 
-func PeerKeepalive() error {
-	var info []string
-	info = append(info, define.KeepaliveQuery, "reduPara", "reduPara")
-	Handler := gohfc.GetHandler()
-	res, err := Handler.Query(info, "", "")
-	if err != nil {
-		return err
-	} else {
-		keepaliveResult := string(res[0].Response.Response.Payload)
-		if keepaliveResult == "Reached" {
-			return nil
-		} else {
-			return fmt.Errorf("peer cann't be reached")
-		}
-	}
-}
+//func PeerKeepalive() error {
+//	var info []string
+//	info = append(info, define.KeepaliveQuery, "reduPara", "reduPara")
+//	Handler := gohfc.GetHandler()
+//	res, err := Handler.Query(info, "", "")
+//	if err != nil {
+//		return err
+//	} else {
+//		keepaliveResult := string(res[0].Response.Response.Payload)
+//		if keepaliveResult == "Reached" {
+//			return nil
+//		} else {
+//			return fmt.Errorf("peer cann't be reached")
+//		}
+//	}
+//}
 
 func OrderKeepalive() error {
 	isconnect, err := gohfc.GetHandler().GetOrdererConnect()
@@ -112,7 +109,7 @@ func QueryData(dateType string, txid string) ([]byte, error) {
 
 func Query(in []string) ([]byte, error) {
 	Handler := gohfc.GetHandler()
-	res, err := Handler.Query(in, "", "")
+	res, err := Handler.Query(in, nil, "", "")
 	if err != nil {
 		return nil, err
 	} else {

@@ -6,17 +6,14 @@ package gohfc
 
 import (
 	"context"
-	"encoding/pem"
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/hyperledger/fabric/protos/common"
-	"github.com/hyperledger/fabric/protos/msp"
 	"github.com/hyperledger/fabric/protos/orderer"
 	"github.com/hyperledger/fabric/protos/peer"
-	"github.com/zhj0811/gohfc/parseBlock"
+	"github.com/peerfintech/gohfc/parseBlock"
 	"google.golang.org/grpc"
-	"io"
 	"math"
 	"time"
 )
@@ -171,6 +168,9 @@ func (e *EventListener) Listen(response chan<- parseBlock.Block, filterResponse 
 				response <- parseBlock.ParseBlock(msg.GetBlock(), size)
 			case *peer.DeliverResponse_FilteredBlock:
 				filterResponse <- *e.parseFilteredBlock(t, e.FullBlock)
+			default:
+				response <- parseBlock.Block{Error: fmt.Errorf("the listen block request is error %v\n", msg)}
+				return
 			}
 		}
 	}()
@@ -390,10 +390,10 @@ func NewEventListener(ctx context.Context, crypto CryptoSuite, identity Identity
 
 	return &listener, nil
 }
-
+/*
 type EventPort struct {
 	event  EventListener
-	client peer.Events_ChatClient
+	client peer.Deliver_DeliverClient
 }
 
 func (e *EventPort) connect(ctx context.Context, p *Peer) error {
@@ -405,8 +405,8 @@ func (e *EventPort) connect(ctx context.Context, p *Peer) error {
 		return err
 	}
 	e.event.connection = conn
-	event := peer.NewEventsClient(conn)
-	cl, err := event.Chat(ctx)
+	event := peer.NewDeliverClient(conn)
+	cl, err := event.Deliver(ctx)
 	if err != nil {
 		return err
 	}
@@ -480,3 +480,4 @@ func (e *EventPort) newEventListener(response chan<- parseBlock.Block, mspId str
 	go e.readBlock(response)
 	return nil
 }
+*/

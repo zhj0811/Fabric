@@ -4,13 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"strconv"
+	"strings"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/protos/common"
-	"github.com/op/go-logging"
-	"github.com/zhj0811/gohfc/parseBlock"
+	"github.com/peerfintech/gohfc/parseBlock"
 	"google.golang.org/grpc/connectivity"
+	"google.golang.org/grpc/grpclog"
 )
 
 //sdk handler
@@ -20,7 +24,7 @@ type sdkHandler struct {
 }
 
 var (
-	logger          = logging.MustGetLogger("sdk")
+	logger          = flogging.MustGetLogger("sdk")
 	handler         sdkHandler
 	orgPeerMap      = make(map[string][]string)
 	orderNames      []string
@@ -36,10 +40,7 @@ func InitSDK(configPath string) error {
 	if err != nil {
 		return err
 	}
-
-	if err := SetLogLevel(clientConfig.LogLevel, "sdk"); err != nil {
-		return fmt.Errorf("setLogLevel err: %s\n", err.Error())
-	}
+	grpclog.SetLoggerV2(grpclog.NewLoggerV2(ioutil.Discard, os.Stdout, os.Stderr))
 	logger.Debugf("************InitSDK************by: %s", configPath)
 
 	handler.client, err = NewFabricClientFromConfig(*clientConfig)
@@ -76,14 +77,19 @@ func GetConfigLogLevel() string {
 	return handler.client.Log.LogLevel
 }
 
+// GetHandler get sdk handler
+func GetChaincodeName() string {
+	return handler.client.Channel.ChaincodeName
+}
+
 // Invoke invoke cc ,if channelName ,chaincodeName is nil that use by client_sdk.yaml set value
-func (sdk *sdkHandler) Invoke(args []string, channelName, chaincodeName string) (*InvokeResponse, error) {
+func (sdk *sdkHandler) Invoke(args []string, transientMap map[string][]byte, channelName, chaincodeName string) (*InvokeResponse, error) {
 	peerNames := getSendPeerName()
 	orderName := getSendOrderName()
 	if len(peerNames) == 0 || orderName == "" {
 		return nil, fmt.Errorf("config peer order is err")
 	}
-	chaincode, err := getChainCodeObj(args, channelName, chaincodeName)
+	chaincode, err := getChainCodeObj(args, transientMap, channelName, chaincodeName)
 	if err != nil {
 		return nil, err
 	}
@@ -91,12 +97,12 @@ func (sdk *sdkHandler) Invoke(args []string, channelName, chaincodeName string) 
 }
 
 // Query query cc  ,if channelName ,chaincodeName is nil that use by client_sdk.yaml set value
-func (sdk *sdkHandler) Query(args []string, channelName, chaincodeName string) ([]*QueryResponse, error) {
+func (sdk *sdkHandler) Query(args []string, transientMap map[string][]byte, channelName, chaincodeName string) ([]*QueryResponse, error) {
 	peerNames := getSendPeerName()
 	if len(peerNames) == 0 {
 		return nil, fmt.Errorf("config peer order is err")
 	}
-	chaincode, err := getChainCodeObj(args, channelName, chaincodeName)
+	chaincode, err := getChainCodeObj(args, transientMap, channelName, chaincodeName)
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +232,7 @@ func (sdk *sdkHandler) GetBlockHeightByEventName(channelName string) (uint64, er
 }
 
 // if channelName ,chaincodeName is nil that use by client_sdk.yaml set value
-func (sdk *sdkHandler) ListenEventFullBlock(channelName string) (chan parseBlock.Block, error) {
+func (sdk *sdkHandler) ListenEventFullBlock(channelName string, startNum int) (chan parseBlock.Block, error) {
 	if len(channelName) == 0 {
 		channelName = sdk.client.Channel.ChannelId
 	}
@@ -235,7 +241,7 @@ func (sdk *sdkHandler) ListenEventFullBlock(channelName string) (chan parseBlock
 	}
 	ch := make(chan parseBlock.Block)
 	ctx, cancel := context.WithCancel(context.Background())
-	err := sdk.client.ListenForFullBlock(ctx, *sdk.identity, eventName, channelName, ch)
+	err := sdk.client.ListenForFullBlock(ctx, *sdk.identity, startNum, eventName, channelName, ch)
 	if err != nil {
 		cancel()
 		return nil, err
@@ -248,7 +254,7 @@ func (sdk *sdkHandler) ListenEventFullBlock(channelName string) (chan parseBlock
 }
 
 // if channelName ,chaincodeName is nil that use by client_sdk.yaml set value
-func (sdk *sdkHandler) ListenEventFilterBlock(channelName string) (chan EventBlockResponse, error) {
+func (sdk *sdkHandler) ListenEventFilterBlock(channelName string, startNum int) (chan EventBlockResponse, error) {
 	if len(channelName) == 0 {
 		channelName = sdk.client.Channel.ChannelId
 	}
@@ -257,7 +263,7 @@ func (sdk *sdkHandler) ListenEventFilterBlock(channelName string) (chan EventBlo
 	}
 	ch := make(chan EventBlockResponse)
 	ctx, cancel := context.WithCancel(context.Background())
-	err := sdk.client.ListenForFilteredBlock(ctx, *sdk.identity, eventName, channelName, ch)
+	err := sdk.client.ListenForFilteredBlock(ctx, *sdk.identity, startNum, eventName, channelName, ch)
 	if err != nil {
 		cancel()
 		return nil, err
@@ -277,6 +283,9 @@ func (sdk *sdkHandler) Listen(peerName, channelName string) (chan parseBlock.Blo
 	}
 	if channelName == "" {
 		return nil, fmt.Errorf("Listen  channelName is empty ")
+	}
+	if peerName == "" {
+		peerName = eventName
 	}
 	mspId := sdk.client.Channel.LocalMspId
 	if mspId == "" {
@@ -319,13 +328,22 @@ func (sdk *sdkHandler) ParseCommonBlock(block *common.Block) (*parseBlock.Block,
 	return &blockObj, nil
 }
 
+// param channel only used for create channel, if upate config channel should be nil
+func (sdk *sdkHandler) ConfigUpdate(payload []byte, channel string) error {
+	orderName := getSendOrderName()
+	if channel != "" {
+		return sdk.client.ConfigUpdate(*sdk.identity, payload, channel, orderName)
+	}
+	return sdk.client.ConfigUpdate(*sdk.identity, payload, sdk.client.Channel.ChannelId, orderName)
+}
+
 type KeyValue struct {
 	Key   string `json:"key"`   //存储数据的key
 	Value string `json:"value"` //存储数据的value
 }
 
 func SetArgsTxid(txid string, args *[]string) {
-	if len(*args) == 2 && (*args)[0] == "SaveData" {
+	if len(*args) == 2 && (*args)[0] == "SaveData" && strings.Contains((*args)[1], "fabricTxId") {
 		var invokeRequest KeyValue
 		if err := json.Unmarshal([]byte((*args)[1]), &invokeRequest); err != nil {
 			logger.Debugf("SetArgsTxid umarshal invokeRequest failed")
@@ -336,12 +354,40 @@ func SetArgsTxid(txid string, args *[]string) {
 			logger.Debugf("SetArgsTxid umarshal message failed")
 			return
 		}
-		invokeRequest.Key = txid
 		msg["fabricTxId"] = txid
 		v, _ := json.Marshal(msg)
 		invokeRequest.Value = string(v)
 		tempData, _ := json.Marshal(invokeRequest)
-		//logging.Debugf("SetArgsTxid msg is %s", tempData)
+		//logger.Debugf("SetArgsTxid msg is %s", tempData)
 		(*args)[1] = string(tempData)
 	}
+}
+
+func (sdk *sdkHandler) GetBlockByTxID(txid string, channelName string) (*common.Block, error) {
+
+	if len(channelName) == 0 {
+		channelName = sdk.client.Channel.ChannelId
+	}
+	if channelName == "" {
+		return nil, fmt.Errorf("GetBlockHeight channelName is empty ")
+	}
+	args := []string{"GetBlockByTxID", channelName, txid}
+	logger.Debugf("GetBlockByTxID chainId %s txid %s", channelName, txid)
+	resps, err := sdk.QueryByQscc(args, channelName)
+	if err != nil {
+		return nil, fmt.Errorf("can not get installed chaincodes :%s", err.Error())
+	} else if len(resps) == 0 {
+		return nil, fmt.Errorf("GetBlockByTxID empty response from peer")
+	}
+	if resps[0].Error != nil {
+		return nil, resps[0].Error
+	}
+	data := resps[0].Response.Response.Payload
+	var block = new(common.Block)
+	err = proto.Unmarshal(data, block)
+	if err != nil {
+		return nil, fmt.Errorf("GetBlockByTxID Unmarshal from payload failed: %s", err.Error())
+	}
+
+	return block, nil
 }

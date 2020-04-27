@@ -5,16 +5,18 @@ License: Apache License Version 2.0
 package gohfc
 
 import (
-	"github.com/golang/protobuf/proto"
-	"github.com/hyperledger/fabric/protos/msp"
-	"encoding/pem"
+	"bytes"
 	"crypto/rand"
 	"encoding/hex"
-	"github.com/hyperledger/fabric/protos/common"
-	"github.com/golang/protobuf/ptypes"
+	"encoding/pem"
 	"time"
+
+	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
+	"github.com/hyperledger/fabric/protos/common"
+	"github.com/hyperledger/fabric/protos/msp"
 	"github.com/hyperledger/fabric/protos/peer"
-	"bytes"
+	"github.com/pkg/errors"
 )
 
 // TransactionId represents transaction identifier. TransactionId is the unique transaction number.
@@ -36,7 +38,8 @@ type QueryResponse struct {
 type InvokeResponse struct {
 	Status common.Status
 	// TxID is transaction id. This id can be used to track transactions and their status
-	TxID string
+	TxID    string
+	Payload []byte
 }
 
 // QueryTransactionResponse holds data from `client.QueryTransaction`
@@ -79,7 +82,7 @@ func signatureHeader(creator []byte, tx *TransactionId) ([]byte, error) {
 }
 
 // header creates new common.header from signature header and channel header
-func header(signatureHeader, channelHeader []byte) (*common.Header) {
+func header(signatureHeader, channelHeader []byte) *common.Header {
 	header := new(common.Header)
 	header.SignatureHeader = signatureHeader
 	header.ChannelHeader = channelHeader
@@ -211,7 +214,7 @@ func createTransactionProposal(identity Identity, cc ChainCode, crypto CryptoSui
 	}
 
 	SetArgsTxid(txId.TransactionId, &cc.Args)
-	
+
 	spec, err := chainCodeInvocationSpec(cc)
 	if err != nil {
 		return nil, err
@@ -263,6 +266,8 @@ func createTransaction(proposal []byte, endorsement []*PeerResponse) ([]byte, er
 			if pl == nil {
 				pl = e.Response.Payload
 			}
+		} else if e.Response.Response.Message != "" {
+			return nil, errors.WithMessage(ErrBadTransactionStatus, e.Response.Response.Message)
 		} else {
 			if e.Err != nil {
 				return nil, e.Err

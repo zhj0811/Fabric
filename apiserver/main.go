@@ -9,17 +9,13 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/op/go-logging"
-
-	"github.com/zhj0811/fabric/apiserver/router"
-	"github.com/zhj0811/fabric/common/metadata"
-	"github.com/zhj0811/fabric/common/sdk"
-
 	"github.com/DeanThompson/ginpprof"
 	"github.com/fvbock/endless"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
-	logging "github.com/zhj0811/fabric/pkg/logging"
+	"github.com/zhj0811/fabric/apiserver/router"
+	"github.com/zhj0811/fabric/common/sdk"
+	"github.com/zhj0811/fabric/pkg/logging"
 )
 
 var (
@@ -29,10 +25,13 @@ var (
 )
 
 // package-scoped variables
-var logger = logging.New
+var logger = logging.NewSugaredLogger("DEBUG", "main")
 
 // package-scoped constants
-const packageName = "apiserver"
+const (
+	packageName = "apiserver"
+	version     = "v1.0.0"
+)
 
 func main() {
 	// parse init param
@@ -46,11 +45,6 @@ func main() {
 	if err != nil {
 		logger.Errorf("init sdk error : %s\n", err.Error())
 		panic(err)
-	}
-
-	if err := sdk.SetLogLevel(viper.GetString("log.logLevel"), metadata.LogModule); err != nil {
-		logger.Errorf("SetLogLevel error : %s\n", err.Error())
-		return
 	}
 
 	// 设置使用系统最大CPU
@@ -74,7 +68,7 @@ func main() {
 	server := endless.NewServer(listenPortString, r)
 	server.BeforeBegin = func(add string) {
 		pid := syscall.Getpid()
-		logger.Criticalf("Actual pid is %d", pid)
+		logger.Errorf("Actual pid is %d", pid)
 		// 保存pid文件
 		pidFile := "apiserver.pid"
 		if checkFileIsExist(pidFile) {
@@ -104,7 +98,6 @@ func checkFileIsExist(filename string) bool {
 }
 
 func printVersion() {
-	version := metadata.GetVersionInfo()
 	fmt.Println(packageName, "with version:", version)
 	fmt.Println()
 }

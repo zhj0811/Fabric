@@ -6,6 +6,11 @@ const (
 	KeepaliveQuery = "KeepaliveQuery"
 	CRYPTO_PATH    = "./crypto/"
 
+	ErrRequestBody    = "request body error"
+	ErrMarshalRequest = "marshaljson request error"
+	ErrInvoke         = "invoke func error"
+	ErrQuery          = "query func error"
+
 	PeerFailed            = 601
 	OrdererFailed         = 602
 	KafkaNormal           = 603
@@ -15,7 +20,8 @@ const (
 	LogModuleInvalid      = 607
 	LogModuleSetError     = 608
 
-	Success            = "900"
+	Success = "Success"
+
 	ParameterError     = "901"
 	PermissionNotFound = "902"
 	ValueOfKeyNil      = "903"

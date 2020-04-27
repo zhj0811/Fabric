@@ -2,13 +2,11 @@ package gohfc
 
 import (
 	"fmt"
-	"github.com/op/go-logging"
 	"math/rand"
-	"os"
 	"time"
 )
 
-func getChainCodeObj(args []string, channelName, chaincodeName string) (*ChainCode, error) {
+func getChainCodeObj(args []string, transientMap map[string][]byte, channelName, chaincodeName string) (*ChainCode, error) {
 	if len(channelName) == 0 {
 		channelName = handler.client.Channel.ChannelId
 	}
@@ -21,27 +19,14 @@ func getChainCodeObj(args []string, channelName, chaincodeName string) (*ChainCo
 	}
 
 	chaincode := ChainCode{
-		ChannelId: channelName,
-		Type:      ChaincodeSpec_GOLANG,
-		Name:      chaincodeName,
-		Args:      args,
+		ChannelId:    channelName,
+		Type:         ChaincodeSpec_GOLANG,
+		Name:         chaincodeName,
+		Args:         args,
+		TransientMap: transientMap,
 	}
 
 	return &chaincode, nil
-}
-
-//设置log级别
-func SetLogLevel(level, name string) error {
-	format := logging.MustStringFormatter("%{shortfile} %{time:2006-01-02 15:04:05.000} [%{module}] %{level:.4s} : %{message}")
-	backend := logging.NewLogBackend(os.Stderr, "", 0)
-	backendFormatter := logging.NewBackendFormatter(backend, format)
-	logLevel, err := logging.LogLevel(level)
-	if err != nil {
-		return err
-	}
-	logging.SetBackend(backendFormatter).SetLevel(logLevel, name)
-	logger.Debugf("SetLogLevel level: %s, levelName: %s\n", level, name)
-	return nil
 }
 
 //解析背书策略

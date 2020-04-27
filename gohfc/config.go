@@ -18,7 +18,6 @@ type ClientConfig struct {
 	EventPeers    map[string]PeerConfig    `yaml:"eventPeers"`
 	ChannelConfig `yaml:"channel"`
 	Mq            `yaml:"mq"`
-	Log           `yaml:"log"`
 }
 
 type ChannelConfig struct {
@@ -28,6 +27,9 @@ type ChannelConfig struct {
 	ChaincodeName    string `yaml:"chaincodeName"`
 	ChaincodeVersion string `yaml:"chaincodeVersion"`
 	ChaincodePolicy  `yaml:"chaincodePolicy"`
+	TlsMutual  bool   `yaml:"tlsMutual"`
+	ClientCert string `yaml:"clientCert"`
+	ClientKey  string `yaml:"clientKey"`
 }
 
 type ChaincodePolicy struct {

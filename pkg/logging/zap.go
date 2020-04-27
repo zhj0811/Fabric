@@ -13,22 +13,44 @@ const (
 	DefaultTimeFamat = "06/01/02T15:04:05.000 MST"
 )
 
-func NewSugaredLogger(level, field string) *zap.SugaredLogger {
-	//atom := zap.NewAtomicLevelAt(logLevel)
+var atomicLevel zap.AtomicLevel
+
+func NewGlobalLogger(level, field string) *zap.SugaredLogger {
 	config := NewDefaultConfig()
-	config.Level = zap.NewAtomicLevelAt(nameToLevel(level))
+	atomicLevel = zap.NewAtomicLevelAt(NameToLevel(level))
+	config.Level = atomicLevel
 	logger, _ := config.Build()
 	return logger.Named(field).Sugar()
+}
+
+func SetGlobalLevel(level string) {
+	atomicLevel.SetLevel(NameToLevel(level))
+	return
+}
+func GetGlobalLevel() string {
+	return atomicLevel.String()
+}
+
+func NewSugaredLogger(level, field string) *zap.SugaredLogger {
+	logger := NewLogger(level, field)
+	sugaredLogger := logger.Sugar()
+	return sugaredLogger
 }
 
 // NewLogger result not support Printf
 func NewLogger(level, field string) *zap.Logger {
 	//atom := zap.NewAtomicLevelAt(logLevel)
 	config := NewDefaultConfig()
-	config.Level = zap.NewAtomicLevelAt(nameToLevel(level))
+	config.Level = zap.NewAtomicLevelAt(NameToLevel(level))
 	logger, _ := config.Build()
 	return logger.Named(field)
 }
+
+//func SetLogLevel(logger *zap.Logger, level string) *zap.Logger {
+//	zapcoreLevel := NameToLevel(level)
+//	zapLogger, _ := zap.NewStdLogAt(logger, zapcoreLevel)
+//	return zapLogger
+//}
 
 func TimeEncoder(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
 	enc.AppendString(t.Format(DefaultTimeFamat))
@@ -59,7 +81,7 @@ func NewDefaultConfig() zap.Config {
 	}
 }
 
-func nameToLevel(level string) zapcore.Level {
+func NameToLevel(level string) zapcore.Level {
 	switch level {
 	case "DEBUG", "debug":
 		return zapcore.DebugLevel

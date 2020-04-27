@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/op/go-logging"
-	"github.com/zhj0811/gohfc/parseBlock"
+	"github.com/peerfintech/gohfc/parseBlock"
 )
 
 type WisHandler struct {
@@ -85,7 +85,7 @@ func (w *WisHandler) ListenEventFullBlock(response chan<- EventBlockResponse) er
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	err = w.FaCli.ListenForFilteredBlock(ctx, *w.Ide, w.EventPeer, w.Channeluuids, response)
+	err = w.FaCli.ListenForFilteredBlock(ctx, *w.Ide, -1, w.EventPeer, w.Channeluuids, response)
 	if err != nil {
 		cancel()
 		return err
@@ -101,7 +101,7 @@ func (w *WisHandler) ListenForFullBlock(response chan<- parseBlock.Block) error 
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	err = w.FaCli.ListenForFullBlock(ctx, *w.Ide, w.EventPeer, w.Channeluuids, response)
+	err = w.FaCli.ListenForFullBlock(ctx, *w.Ide, -1, w.EventPeer, w.Channeluuids, response)
 	if err != nil {
 		cancel()
 		return err
@@ -179,7 +179,7 @@ func (w *WisHandler) Init() error {
 
 	peers := make(map[string]*Peer)
 	for peerName, peerConf := range w.PeerConfMap {
-		peer, err := NewPeerFromConfig(peerConf, crypto)
+		peer, err := NewPeerFromConfig(fabricClient.Channel, peerConf, crypto)
 		if err != nil {
 			return fmt.Errorf("Peer NewPeerFromConfig err :", err)
 		}
@@ -189,7 +189,7 @@ func (w *WisHandler) Init() error {
 
 	if "" != w.OrderName {
 		orderers := make(map[string]*Orderer)
-		order, err := NewOrdererFromConfig(w.OrdererConf)
+		order, err := NewOrdererFromConfig(fabricClient.Channel, w.OrdererConf)
 		if err != nil {
 			return fmt.Errorf("Order NewOrdererFromConfig err :", err)
 		}
@@ -199,7 +199,7 @@ func (w *WisHandler) Init() error {
 
 	if "" != w.EventPeer {
 		eventpeers := make(map[string]*Peer)
-		eventpeer, err := NewPeerFromConfig(w.PeerConfMap[w.EventPeer], crypto)
+		eventpeer, err := NewPeerFromConfig(fabricClient.Channel, w.PeerConfMap[w.EventPeer], crypto)
 		if err != nil {
 			return fmt.Errorf("EventPeer NewPeerFromConfig err :", err)
 		}

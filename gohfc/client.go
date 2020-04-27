@@ -8,12 +8,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/protos/common"
 	"github.com/hyperledger/fabric/protos/orderer"
 	"github.com/hyperledger/fabric/protos/peer"
-	"github.com/zhj0811/gohfc/parseBlock"
+	"github.com/peerfintech/gohfc/parseBlock"
 )
 
 // FabricClient expose API's to work with Hyperledger Fabric
@@ -26,7 +27,7 @@ type FabricClient struct {
 	Mq         Mq
 	Log        Log
 	Event      *EventListener
-	EventPort  *EventPort
+	//EventPort  *EventPort
 }
 
 // CreateUpdateChannel read channel config generated (usually) from configtxgen and send it to orderer
@@ -43,6 +44,33 @@ func (c *FabricClient) CreateUpdateChannel(identity Identity, path string, chann
 		return err
 	}
 	ou, err := buildAndSignChannelConfig(identity, envelope.GetPayload(), c.Crypto, channelId)
+	if err != nil {
+		return err
+	}
+	replay, err := ord.Broadcast(ou)
+	if err != nil {
+		return err
+	}
+	if replay.GetStatus() != common.Status_SUCCESS {
+		return errors.New("error creating new channel. See orderer logs for more details")
+	}
+	return nil
+}
+
+func (c *FabricClient) ConfigUpdate(identity Identity, data []byte, channelId string, orderer string) error {
+	configUpdateEnvelope := &common.ConfigUpdateEnvelope{}
+	err := proto.Unmarshal(data, configUpdateEnvelope)
+	if err != nil {
+		return err
+
+	}
+
+	ord, ok := c.Orderers[orderer]
+	if !ok {
+		return ErrInvalidOrdererName
+	}
+
+	ou, err := buildAndSignConfigUpdate(identity, configUpdateEnvelope, c.Crypto, channelId)
 	if err != nil {
 		return err
 	}
@@ -458,7 +486,8 @@ func (c *FabricClient) Invoke(identity Identity, chainCode ChainCode, peers []st
 	if err != nil {
 		return nil, err
 	}
-	transaction, err := createTransaction(prop.proposal, sendToPeers(execPeers, proposal))
+	propResponses := sendToPeers(execPeers, proposal)
+	transaction, err := createTransaction(prop.proposal, propResponses)
 	if err != nil {
 		return nil, err
 	}
@@ -470,7 +499,7 @@ func (c *FabricClient) Invoke(identity Identity, chainCode ChainCode, peers []st
 	if err != nil {
 		return nil, err
 	}
-	return &InvokeResponse{Status: reply.Status, TxID: prop.transactionId}, nil
+	return &InvokeResponse{Status: reply.Status, TxID: prop.transactionId, Payload: propResponses[0].Response.Response.Payload}, nil
 }
 
 // QueryTransaction get data for particular transaction.
@@ -523,7 +552,7 @@ func (c *FabricClient) QueryTransaction(identity Identity, channelId string, txI
 // To cancel listening provide context with cancellation option and call cancel.
 // User can listen for same events in same channel in multiple peers for redundancy using same `chan<- EventBlockResponse`
 // In this case every peer will send its events, so identical events may appear more than once in channel.
-func (c *FabricClient) ListenForFullBlock(ctx context.Context, identity Identity, eventPeer, channelId string, response chan<- parseBlock.Block) error {
+func (c *FabricClient) ListenForFullBlock(ctx context.Context, identity Identity, startNum int, eventPeer, channelId string, response chan<- parseBlock.Block) error {
 	ep, ok := c.EventPeers[eventPeer]
 	if !ok {
 		return ErrPeerNameNotFound
@@ -532,7 +561,11 @@ func (c *FabricClient) ListenForFullBlock(ctx context.Context, identity Identity
 	if err != nil {
 		return err
 	}
-	err = listener.SeekNewest()
+	if startNum < 0 {
+		err = listener.SeekNewest()
+	} else {
+		err = listener.SeekRange(uint64(startNum), math.MaxUint64)
+	}
 	if err != nil {
 		return err
 	}
@@ -545,7 +578,7 @@ func (c *FabricClient) ListenForFullBlock(ctx context.Context, identity Identity
 // ListenForFilteredBlock listen for events in blockchain. Difference with `ListenForFullBlock` is that event names
 // will be returned but NOT events data. Also full block data will not be available.
 // Other options are same as `ListenForFullBlock`.
-func (c *FabricClient) ListenForFilteredBlock(ctx context.Context, identity Identity, eventPeer, channelId string, response chan<- EventBlockResponse) error {
+func (c *FabricClient) ListenForFilteredBlock(ctx context.Context, identity Identity, startNum int, eventPeer, channelId string, response chan<- EventBlockResponse) error {
 	ep, ok := c.EventPeers[eventPeer]
 	if !ok {
 		return ErrPeerNameNotFound
@@ -554,7 +587,11 @@ func (c *FabricClient) ListenForFilteredBlock(ctx context.Context, identity Iden
 	if err != nil {
 		return err
 	}
-	err = listener.SeekNewest()
+	if startNum < 0 {
+		err = listener.SeekNewest()
+	} else {
+		err = listener.SeekRange(uint64(startNum), math.MaxUint64)
+	}
 	if err != nil {
 		return err
 	}
@@ -566,22 +603,25 @@ func (c *FabricClient) ListenForFilteredBlock(ctx context.Context, identity Iden
 
 // Listen v 1.0.4 -- port ==> 7053
 func (c *FabricClient) Listen(ctx context.Context, identity *Identity, eventPeer, channelId, mspId string, response chan<- parseBlock.Block) error {
-	ep, ok := c.EventPeers[eventPeer]
-	if !ok {
-		return ErrPeerNameNotFound
-	}
-	eventPort := &EventPort{
-		event: EventListener{
-			Context:   ctx,
-			Peer:      *ep,
-			Identity:  *identity,
-			ChannelId: channelId,
-			Crypto:    c.Crypto,
-			FullBlock: false,
-		},
-	}
-	c.EventPort = eventPort
-	return c.EventPort.newEventListener(response, mspId)
+	return nil
+	/*
+		ep, ok := c.EventPeers[eventPeer]
+		if !ok {
+			return ErrPeerNameNotFound
+		}
+		eventPort := &EventPort{
+			event: EventListener{
+				Context:   ctx,
+				Peer:      *ep,
+				Identity:  *identity,
+				ChannelId: channelId,
+				Crypto:    c.Crypto,
+				FullBlock: false,
+			},
+		}
+		c.EventPort = eventPort
+		return c.EventPort.newEventListener(response, mspId)
+	*/
 }
 
 // NewFabricClientFromConfig create a new FabricClient from ClientConfig
@@ -605,38 +645,38 @@ func NewFabricClientFromConfig(config ClientConfig) (*FabricClient, error) {
 
 	peers := make(map[string]*Peer)
 	for name, p := range config.Peers {
-		newPeer, err := NewPeerFromConfig(p, crypto)
+		newPeer, err := NewPeerFromConfig(config.ChannelConfig, p, crypto)
 		if err != nil {
 			return nil, err
 		}
 		newPeer.Name = name
 		newPeer.OrgName = p.OrgName
 		peers[name] = newPeer
-		logger.Debugf("Create the endorserpeer connection is successful : %s",name)
+		logger.Infof("Create the endorserpeer connection is successful : %s", name)
 	}
 
 	eventPeers := make(map[string]*Peer)
 	for name, p := range config.EventPeers {
-		newEventPeer, err := NewPeerFromConfig(p, crypto)
+		newEventPeer, err := NewPeerFromConfig(config.ChannelConfig, p, crypto)
 		if err != nil {
 			return nil, err
 		}
 		newEventPeer.Name = name
 		eventPeers[name] = newEventPeer
-		logger.Debugf("Create the eventpeer connection is successful : %s",name)
+		logger.Infof("Create the eventpeer connection is successful : %s", name)
 	}
 
 	orderers := make(map[string]*Orderer)
 	for name, o := range config.Orderers {
-		newOrderer, err := NewOrdererFromConfig(o)
+		newOrderer, err := NewOrdererFromConfig(config.ChannelConfig, o)
 		if err != nil {
 			return nil, err
 		}
 		newOrderer.Name = name
 		orderers[name] = newOrderer
-		logger.Debugf("Create the orderer connection is successful : %s",name)
+		logger.Infof("Create the orderer connection is successful : %s", name)
 	}
-	client := FabricClient{Peers: peers, EventPeers: eventPeers, Orderers: orderers, Crypto: crypto, Channel: config.ChannelConfig, Mq: config.Mq, Log: config.Log}
+	client := FabricClient{Peers: peers, EventPeers: eventPeers, Orderers: orderers, Crypto: crypto, Channel: config.ChannelConfig, Mq: config.Mq}
 	return &client, nil
 }
 

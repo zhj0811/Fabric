@@ -48,13 +48,19 @@ func (p *Peer) Endorse(resp chan *PeerResponse, prop *peer.SignedProposal) {
 }
 
 // NewPeerFromConfig creates new peer from provided config
-func NewPeerFromConfig(conf PeerConfig, cryptoSuite CryptoSuite) (*Peer, error) {
+func NewPeerFromConfig(cliConfig ChannelConfig, conf PeerConfig, cryptoSuite CryptoSuite) (*Peer, error) {
 	p := Peer{Uri: conf.Host, caPath: conf.TlsPath}
 	if !conf.UseTLS {
 		p.Opts = []grpc.DialOption{grpc.WithInsecure()}
 	} else if p.caPath != "" {
-		if conf.TlsMutual {
-			cert, err := tls.LoadX509KeyPair(conf.ClientCert, conf.ClientKey)
+		if conf.ClientKey != "" {
+			//TODO 为了兼容老版本每个节点都要配置双端验证，以后版本只在channelConfig配置一份设置
+			cliConfig.TlsMutual = conf.TlsMutual
+			cliConfig.ClientCert = conf.ClientCert
+			cliConfig.ClientKey = conf.ClientKey
+		}
+		if cliConfig.TlsMutual {
+			cert, err := tls.LoadX509KeyPair(cliConfig.ClientCert, cliConfig.ClientKey)
 			if err != nil {
 				return nil, fmt.Errorf("failed to Load client keypair: %s\n", err.Error())
 			}
@@ -63,7 +69,7 @@ func NewPeerFromConfig(conf PeerConfig, cryptoSuite CryptoSuite) (*Peer, error) 
 			}
 			caPem, err := ioutil.ReadFile(conf.TlsPath)
 			if err != nil {
-				return nil, fmt.Errorf("failed to read CA cert file %s\n", conf.TlsPath)
+				return nil, fmt.Errorf("failed to read CA cert faild err:%s\n", err.Error())
 			}
 			certpool := x509.NewCertPool()
 			certpool.AppendCertsFromPEM(caPem)
@@ -97,7 +103,7 @@ func NewPeerFromConfig(conf PeerConfig, cryptoSuite CryptoSuite) (*Peer, error) 
 
 	conn, err := grpc.Dial(p.Uri, p.Opts...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("connect host=%s failed, err:%s\n", p.Uri, err.Error())
 	}
 	p.conn = conn
 	p.client = peer.NewEndorserClient(p.conn)
