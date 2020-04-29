@@ -15,9 +15,9 @@ const (
 
 var atomicLevel zap.AtomicLevel
 
-func NewGlobalLogger(level, field string) *zap.SugaredLogger {
+func NewGlobalLogger(field string) *zap.SugaredLogger {
 	config := NewDefaultConfig()
-	atomicLevel = zap.NewAtomicLevelAt(NameToLevel(level))
+	atomicLevel = zap.NewAtomicLevelAt(zapcore.InfoLevel)
 	config.Level = atomicLevel
 	logger, _ := config.Build()
 	return logger.Named(field).Sugar()
